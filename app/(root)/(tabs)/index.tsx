@@ -1,6 +1,13 @@
 import { Link } from "expo-router";
-import { Text, View, Image, TouchableOpacity, useColorScheme } from "react-native";
+import {
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  useColorScheme,
+} from "react-native";
 import Logo from "@/assets/images/landing-icon1.png";
+import { Button } from "react-native-paper";
 
 export default function Index() {
   const colorScheme = useColorScheme();
@@ -15,16 +22,25 @@ export default function Index() {
       <View>
         <Image source={Logo} className="h-72 w-72" />
       </View>
-      <Text className={`font-bold ${colorScheme === "dark" ? "text-white" : "text-black"} text-3xl`}>Welcome to SafeWayz</Text>
-      <Text className={`text-lg ${colorScheme === "dark" ? "text-white" : "text-black"} mb-10`}>Safely Navigating Angeles City</Text>
+      <Text
+        className={`font-bold text-3xl`}
+      >
+        Welcome to SafeWayz
+      </Text>
+      <Text
+        className={`text-lg mb-10`}
+      >
+        Safely Navigating Angeles City
+      </Text>
 
       <View className="px-10 w-full">
-        <TouchableOpacity className="bg-red-800  py-4 w-full rounded-full">
+        <Button mode="contained">
           <Link href="/sign-in" asChild>
-          <Text className="text-white font-semibold text-center">
-          Let's Start</Text>
+            <Text className="text-white font-semibold text-center">
+              Let's Start
+            </Text>
           </Link>
-        </TouchableOpacity>
+        </Button>
         {/* <TouchableOpacity className="bg-blue-500  py-4 mt-5 w-full rounded-full">
           <Link href="/sign-up" asChild>
           <Text className="text-white font-semibold text-center">
