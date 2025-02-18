@@ -12,6 +12,8 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { lightTheme, darkTheme } from "@/assets/theme/theme";
+import { Provider } from "react-redux";
+import store from "./store";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,17 +23,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync(); // Hide splash screen once fonts are loaded
+    } else {
+      SplashScreen.preventAutoHideAsync(); // Prevent auto hide until fonts are loaded
     }
   }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
 
   const appTheme = colorScheme === "dark" ? darkTheme : lightTheme;
 
   return (
+    <Provider store={store}>
     <SafeAreaProvider>
       <PaperProvider theme={appTheme}>
         <ThemeProvider
@@ -50,5 +51,6 @@ export default function RootLayout() {
         </ThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>
+    </Provider>
   );
 }
