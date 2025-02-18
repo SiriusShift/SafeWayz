@@ -12,6 +12,8 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { lightTheme, darkTheme } from "@/assets/theme/theme";
+import { Provider } from "react-redux";
+import store from "./store";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -19,36 +21,41 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  // Show splash screen until fonts are loaded
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync(); // Hide splash screen once fonts are loaded
+    } else {
+      SplashScreen.preventAutoHideAsync(); // Prevent auto hide until fonts are loaded
     }
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return null; // Don't render UI until fonts are loaded
   }
 
   const appTheme = colorScheme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <SafeAreaProvider>
-      <PaperProvider theme={appTheme}>
-        <ThemeProvider
-          value={colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme}
-        >
-          {/* Stack from expo-router */}
-          <Stack
-            screenOptions={{
-              headerShown: false, // Hide header by default
-            }}
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <PaperProvider theme={appTheme}>
+          <ThemeProvider
+            value={colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme}
           >
-            {/* Define screens as you normally would */}
-            <Stack.Screen name="sign-in" options={{ title: "Welcome" }} />
-            <Stack.Screen name="sign-up" options={{ title: "Sign Up Now" }} />
-          </Stack>
-        </ThemeProvider>
-      </PaperProvider>
-    </SafeAreaProvider>
+            {/* Stack from expo-router */}
+            <Stack
+              screenOptions={{
+                headerShown: false, // Hide header by default
+              }}
+            >
+              {/* Define screens as you normally would */}
+              <Stack.Screen name="sign-in" options={{ title: "Welcome" }} />
+              <Stack.Screen name="sign-up" options={{ title: "Sign Up Now" }} />
+            </Stack>
+          </ThemeProvider>
+        </PaperProvider>
+      </SafeAreaProvider>
+    </Provider>
   );
 }
