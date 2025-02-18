@@ -21,6 +21,7 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  // Show splash screen until fonts are loaded
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync(); // Hide splash screen once fonts are loaded
