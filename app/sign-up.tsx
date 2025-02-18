@@ -5,25 +5,56 @@ import {
   Image,
   Keyboard,
 } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { signUpSchema } from "@/schema/schema";
 import Logo from "@/assets/images/location.png";
 import { Button, TextInput } from "react-native-paper";
-import { Link } from "expo-router";
+import { Link, useNavigation } from "expo-router";
+// import { encryptString } from "@/utils/customFunction";
+import { usePostSignupMutation } from "@/features/authentication/api/signupApi";
+import {BASE_URL} from '@env'
+
 
 const signUp = () => {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const navigate = useNavigation()
+
+  console.log(BASE_URL);
+
   const {
     control,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors },
   } = useForm({
     mode: "onChange",
     resolver: yupResolver(signUpSchema.schema),
     defaultValues: signUpSchema.defaultValues,
   });
+
+  const [signupTrigger, {isLoading}] = usePostSignupMutation();
+  
+  console.log(errors);
+
+  const onSubmit = async () => {
+    const data = watch() || {}; // Get form data
+    console.log(data); // Log the form data to ensure it's correct
+    // const encryptedPassword = encryptString(getValues('password'));
+    // console.log(encryptedPassword)
+    try {
+      const response = await signupTrigger(data).unwrap();
+
+      console.log(response);
+
+    } catch (error) {
+      console.error("Error:", error); // Handle errors such as network issues
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View className="flex-1 justify-center items-center w-full gap-y-5 bg-white">
@@ -75,6 +106,13 @@ const signUp = () => {
               <TextInput
                 mode="outlined"
                 label="Password"
+                secureTextEntry={!passwordVisible} // Toggle visibility
+                right={
+                  <TextInput.Icon
+                    icon={passwordVisible ? "eye-off" : "eye"} // Change icon dynamically
+                    onPress={() => setPasswordVisible(!passwordVisible)} // Toggle state
+                  />
+                }
                 error={!!errors.password}
                 onBlur={onBlur}
                 onChangeText={onChange}
@@ -92,6 +130,13 @@ const signUp = () => {
               <TextInput
                 mode="outlined"
                 label="Confirm Password"
+                secureTextEntry={!confirmVisible} // Toggle visibility
+                right={
+                  <TextInput.Icon
+                    icon={confirmVisible ? "eye-off" : "eye"} // Change icon dynamically
+                    onPress={() => setConfirmVisible(!confirmVisible)} // Toggle state
+                  />
+                }
                 error={!!errors.confirmPassword}
                 onBlur={onBlur}
                 onChangeText={onChange}
@@ -107,11 +152,7 @@ const signUp = () => {
         </View>
 
         {/* Sign In Button */}
-        <Button
-          mode="contained"
-          className="w-5/6 mt-4"
-          onPress={() => console.log("Sign In Pressed")}
-        >
+        <Button mode="contained" className="w-5/6 mt-4" onPress={onSubmit}>
           Sign Up
         </Button>
         <Text>
