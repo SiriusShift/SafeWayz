@@ -4,6 +4,7 @@ import {
   TouchableWithoutFeedback,
   Image,
   Keyboard,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -14,15 +15,15 @@ import { Button, TextInput } from "react-native-paper";
 import { Link, useNavigation } from "expo-router";
 // import { encryptString } from "@/utils/customFunction";
 import { usePostSignupMutation } from "@/features/authentication/api/signupApi";
-import {BASE_URL} from '@env'
-
+import SecureStorage from 'react-native-secure-storage';
+import { useDispatch } from "react-redux";
+import { setUserInfo } from "@/features/authentication/reducer/loginSlice";
 
 const signUp = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const navigate = useNavigation()
-
-  console.log(BASE_URL);
+  const dispatch = useDispatch();
 
   const {
     control,
@@ -46,9 +47,17 @@ const signUp = () => {
     // const encryptedPassword = encryptString(getValues('password'));
     // console.log(encryptedPassword)
     try {
-      const response = await signupTrigger(data).unwrap();
+      const response = await signupTrigger({
+        fullname: data.fullname,
+        username: data.username,
+        password: data.password
+      }).unwrap();
 
-      console.log(response);
+      const {accessToken} = response;
+
+      await SecureStorage.setItem('accessToken', accessToken);
+      dispatch(setUserInfo(response.user));
+      Alert.alert('Login Successful!');
 
     } catch (error) {
       console.error("Error:", error); // Handle errors such as network issues
