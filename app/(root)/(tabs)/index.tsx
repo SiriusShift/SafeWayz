@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useNavigation } from "expo-router";
 import {
   Text,
   View,
@@ -7,10 +7,13 @@ import {
   useColorScheme,
 } from "react-native";
 import Logo from "@/assets/images/landing-icon1.png";
-import { Button } from "react-native-paper";
+import { Button, useTheme } from "react-native-paper";
+import { useState } from "react";
 
 export default function Index() {
-  const colorScheme = useColorScheme();
+  // const colorScheme = useColorScheme();
+  const theme = useTheme();
+  
   return (
     <View
       style={{
@@ -24,23 +27,22 @@ export default function Index() {
       </View>
       <Text
         className={`font-bold text-3xl`}
+        style={{ color: theme.colors.onSurface }}
       >
         Welcome to SafeWayz
       </Text>
       <Text
         className={`text-lg mb-10`}
+        style={{ color: theme.colors.onSurface }}
       >
         Safely Navigating Angeles City
       </Text>
 
       <View className="px-10 w-full">
-        <Button mode="contained">
-          <Link href="/sign-in" asChild>
-            <Text className="text-white font-semibold text-center">
-              Let's Start
-            </Text>
-          </Link>
-        </Button>
+        <Link href="/sign-in" asChild>
+          <Button mode="contained">Let's Start</Button>
+        </Link>
+
         {/* <TouchableOpacity className="bg-blue-500  py-4 mt-5 w-full rounded-full">
           <Link href="/sign-up" asChild>
           <Text className="text-white font-semibold text-center">
