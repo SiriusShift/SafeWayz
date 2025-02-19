@@ -16,7 +16,7 @@ const darkTheme = {
   colors: {
     ...MD3DarkTheme.colors,
     primary: "#c22727",
-    background: "#121212",
+    background: "#000000",
     onSurface: "#FFFFFF", // Text color for dark mode
     onPrimary: "#FFFFFF",
   },

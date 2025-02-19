@@ -1,9 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { BASE_URL } from "@env";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.BASE_URL,
+    baseUrl: process.env.EXPO_PUBLIC_BASE_URL,
 
     prepareHeaders: (headers) => {
       headers.set("Accept", "application/json");
