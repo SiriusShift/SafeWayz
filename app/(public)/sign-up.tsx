@@ -11,19 +11,22 @@ import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { signUpSchema } from "@/schema/schema";
 import Logo from "@/assets/images/location.png";
-import { Button, TextInput } from "react-native-paper";
+import { Button, TextInput, useTheme } from "react-native-paper";
 import { Link, useNavigation } from "expo-router";
 // import { encryptString } from "@/utils/customFunction";
-import { usePostSignupMutation } from "@/features/authentication/api/signupApi";
-import SecureStorage from 'react-native-secure-storage';
+import { usePostSignupMutation } from "@/features/authentication/api/authApi";
 import { useDispatch } from "react-redux";
-import { setUserInfo } from "@/features/authentication/reducer/loginSlice";
+import StyledText from "@/components/StyledText";
+import StyledView from "@/components/StyledView"
+import { useSnackbar } from "@/hooks/useSnackbar";
+import { useAuth } from "@/context/authContext";
 
 const signUp = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
-  const navigate = useNavigation()
   const dispatch = useDispatch();
+  const {register} = useAuth();
+  const {showSnackbar} = useSnackbar();
 
   const {
     control,
@@ -52,26 +55,23 @@ const signUp = () => {
         username: data.username,
         password: data.password
       }).unwrap();
+      register(response);
 
-      const {accessToken} = response;
-
-      await SecureStorage.setItem('accessToken', accessToken);
-      dispatch(setUserInfo(response.user));
-      Alert.alert('Login Successful!');
+      showSnackbar("Signup Successful!", 3000, "success");
 
     } catch (error) {
-      console.error("Error:", error); // Handle errors such as network issues
+      showSnackbar(error?.data?.message || "Signup Failed. Please Try Again", 3000, "danger");
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <View className="flex-1 justify-center items-center w-full gap-y-5 bg-white">
+      <StyledView className="flex-1 justify-center items-center w-full gap-y-5">
         {/* Logo */}
         <Image source={Logo} style={{ height: 70, width: 70 }} />
 
         {/* Welcome Text */}
-        <Text className="text-3xl font-bold">Create an account</Text>
+        <StyledText className="text-3xl font-bold">Create an account</StyledText>
 
         {/* Input Fields */}
         <View className="w-5/6 gap-y-3">
@@ -164,13 +164,13 @@ const signUp = () => {
         <Button mode="contained" className="w-5/6 mt-4" onPress={onSubmit}>
           Sign Up
         </Button>
-        <Text>
+        <StyledText>
           Already have an account?{" "}
           <Link className="font-bold" href="/sign-in">
             Sign In
           </Link>
-        </Text>
-      </View>
+        </StyledText>
+      </StyledView>
     </TouchableWithoutFeedback>
   );
 };

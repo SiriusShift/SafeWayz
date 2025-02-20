@@ -8,12 +8,20 @@ import {
 import React, { useState } from "react";
 import Logo from "@/assets/images/location.png";
 import { useForm, Controller } from "react-hook-form";
-import { Button, TextInput } from "react-native-paper";
+import { Button, TextInput, useTheme } from "react-native-paper";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Link } from "expo-router";
 import { loginSchema } from "@/schema/schema";
+import StyledText from "@/components/StyledText";
+import StyledView from "@/components/StyledView";
+import { useSnackbar } from "@/hooks/useSnackbar";
+import { usePostSigninMutation } from "@/features/authentication/api/authApi";
+import { useAuth } from "@/context/authContext";
 const signIn = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const {showSnackbar} = useSnackbar();
+  const {login} = useAuth();
+  const theme = useTheme();
 
   const {
     control,
@@ -26,16 +34,29 @@ const signIn = () => {
     defaultValues: loginSchema.defaultValues,
   });
 
+  const [loginTrigger, {isLoading}] = usePostSigninMutation();
+
+  const onSubmit = async () => {
+    const data = watch() || {}; // Get form data
+    try{
+      const response = await loginTrigger(data).unwrap();
+      login(response.user);
+      showSnackbar("Login Successful!", 3000, "success");
+    }catch(err){
+      showSnackbar(err?.data?.message || "Login Failed. Please Try Again", 3000, "danger");
+    }
+  };
+
   console.log(watch())
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <View className="flex-1 justify-center items-center w-full gap-y-5 bg-white">
+      <StyledView className="flex-1 justify-center items-center w-full gap-y-5">
         {/* Logo */}
         <Image source={Logo} style={{ height: 70, width: 70 }} />
 
         {/* Welcome Text */}
-        <Text className="text-3xl font-bold">Welcome back!</Text>
+        <StyledText className="text-3xl font-bold">Welcome back!</StyledText>
 
         {/* Input Fields */}
         <View className="w-5/6 gap-y-3">
@@ -89,17 +110,17 @@ const signIn = () => {
         <Button
           mode="contained"
           className="w-5/6 mt-4"
-          onPress={() => console.log("Sign In Pressed")}
+          onPress={() => onSubmit()}
         >
           Sign In
         </Button>
-        <Text>
+        <StyledText>
           Don't have an account?{" "}
           <Link className="font-bold" href="/sign-up">
             Sign Up
           </Link>
-        </Text>
-      </View>
+        </StyledText>
+      </StyledView>
     </TouchableWithoutFeedback>
   );
 };
