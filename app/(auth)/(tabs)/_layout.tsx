@@ -17,8 +17,6 @@ const TabsLayout = () => {
             position: "absolute",
             alignContent: "center",
             height: 60,
-            borderRadius: 100,
-            margin: 20,
             borderTopWidth: 0, // Removes the white line (border)
             elevation: 0, // Removes shadow on Android
             shadowOpacity: 0, // Removes shadow on iOS

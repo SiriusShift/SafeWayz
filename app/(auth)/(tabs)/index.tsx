@@ -1,17 +1,58 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import StyledView from '@/components/StyledView'
-import StyledText from '@/components/StyledText'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useTheme } from 'react-native-paper'
+import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useTheme } from 'react-native-paper';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 
-const index = () => {
+const Index = () => {
   const theme = useTheme();
-  return (
-    <SafeAreaView className="h-full" style={{backgroundColor: theme.colors.background}}>
-      <StyledText>Hello</StyledText>
-    </SafeAreaView>
-  )
-}
+  const [location, setLocation] = useState(null);
 
-export default index
+  useEffect(() => {
+    const getPermissions = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Please grant location permissions');
+        return;
+      }
+
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+
+      console.log('Location:', currentLocation);
+    };
+
+    getPermissions();
+  }, []); // ✅ Added dependency array to run only once
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: location?.latitude || 14.5995, // Default to Manila
+          longitude: location?.longitude || 120.9842,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+      >
+        {location && <Marker coordinate={location} title="Your Location" />}
+      </MapView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+});
+
+export default Index;
