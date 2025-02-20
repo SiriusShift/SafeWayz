@@ -14,17 +14,19 @@ import Logo from "@/assets/images/location.png";
 import { Button, TextInput, useTheme } from "react-native-paper";
 import { Link, useNavigation } from "expo-router";
 // import { encryptString } from "@/utils/customFunction";
-import { usePostSignupMutation } from "@/features/authentication/api/signupApi";
-import * as SecureStorage from "expo-secure-store";
+import { usePostSignupMutation } from "@/features/authentication/api/authApi";
 import { useDispatch } from "react-redux";
-import { setUserInfo } from "@/features/authentication/reducer/loginSlice";
 import StyledText from "@/components/StyledText";
 import StyledView from "@/components/StyledView"
+import { useSnackbar } from "@/hooks/useSnackbar";
+import { useAuth } from "@/context/authContext";
 
 const signUp = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const dispatch = useDispatch();
+  const {register} = useAuth();
+  const {showSnackbar} = useSnackbar();
 
   const {
     control,
@@ -53,13 +55,12 @@ const signUp = () => {
         username: data.username,
         password: data.password
       }).unwrap();
+      register(response);
 
-      await SecureStorage.setItemAsync('accessToken', response.accessToken);
-      dispatch(setUserInfo(response.user));
-      Alert.alert('Login Successful!');
+      showSnackbar("Signup Successful!", 3000, "success");
 
     } catch (error) {
-      console.error("Error:", error); // Handle errors such as network issues
+      showSnackbar(error?.data?.message || "Signup Failed. Please Try Again", 3000, "danger");
     }
   };
 

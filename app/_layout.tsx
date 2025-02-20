@@ -11,6 +11,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import AuthProvider, { useAuth } from "@/context/authContext";
 import {StatusBar} from "expo-status-bar"
+import { SnackbarProvider } from "@/hooks/useSnackbar";
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 
@@ -77,6 +78,8 @@ function AuthGuard() {
 
   return (
     <PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
+      <SnackbarProvider>
+
       <StatusBar networkActivityIndicatorVisible={true} style={colorScheme === "dark" ? "dark" : "light" }/>
       {/* <ThemeProvider
         value={
@@ -91,6 +94,7 @@ function AuthGuard() {
           <Stack.Screen name="(auth)/(tabs)" />
         </Stack>
       {/* </ThemeProvider> */}
+      </SnackbarProvider>
     </PaperProvider>
   );
 }
