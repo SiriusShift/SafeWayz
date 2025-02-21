@@ -40,7 +40,7 @@ const signIn = () => {
     const data = watch() || {}; // Get form data
     try{
       const response = await loginTrigger(data).unwrap();
-      login(response.user);
+      login(response);
       showSnackbar("Login Successful!", 3000, "success");
     }catch(err){
       showSnackbar(err?.data?.message || "Login Failed. Please Try Again", 3000, "danger");
