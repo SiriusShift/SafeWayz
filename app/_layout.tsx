@@ -12,6 +12,8 @@ import store from "./store";
 import AuthProvider, { useAuth } from "@/context/authContext";
 import {StatusBar} from "expo-status-bar"
 import { SnackbarProvider } from "@/hooks/useSnackbar";
+import 'react-native-get-random-values';
+
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 

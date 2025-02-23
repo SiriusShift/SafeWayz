@@ -161,8 +161,8 @@ const signUp = () => {
         </View>
 
         {/* Sign In Button */}
-        <Button mode="contained" className="w-5/6 mt-4" onPress={onSubmit}>
-          Sign Up
+        <Button mode="contained" loading={isLoading} className="w-5/6 mt-4" onPress={onSubmit}>
+          {isLoading ? "" : "Sign Up"}
         </Button>
         <StyledText>
           Already have an account?{" "}

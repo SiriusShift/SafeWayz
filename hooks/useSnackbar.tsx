@@ -2,8 +2,13 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import { Snackbar } from "react-native-paper";
 import { Text } from "react-native";
 
-// Create a context for the Snackbar
-const SnackbarContext = createContext();
+// Define the type for SnackbarContext
+type SnackbarContextType = {
+  showSnackbar: (msg: string, time?: number, type?: keyof typeof VARIANT_COLORS) => void;
+};
+
+// Create context with an explicit default value
+const SnackbarContext = createContext<SnackbarContextType | undefined>(undefined);
 
 // Define colors for each variant
 const VARIANT_COLORS = {

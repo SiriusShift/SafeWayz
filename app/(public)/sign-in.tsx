@@ -27,7 +27,7 @@ const signIn = () => {
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
     resolver: yupResolver(loginSchema.schema),
@@ -108,11 +108,13 @@ const signIn = () => {
 
         {/* Sign In Button */}
         <Button
+          disabled={!isValid || isLoading}
           mode="contained"
           className="w-5/6 mt-4"
+          loading={isLoading}
           onPress={() => onSubmit()}
         >
-          Sign In
+          {isLoading ? "" : "Sign In"}
         </Button>
         <StyledText>
           Don't have an account?{" "}
