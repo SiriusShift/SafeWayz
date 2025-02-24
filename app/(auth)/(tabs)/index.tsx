@@ -18,6 +18,7 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import Compass from "@/components/compass";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const RouteCallout = ({ duration, isSelected }) => {
@@ -54,22 +55,18 @@ const RouteCallout = ({ duration, isSelected }) => {
 const Index = () => {
   const theme = useTheme();
   const { showSnackbar } = useSnackbar();
-  const snapPoints = ["25%", "50%", "100%"];
+  const snapPoints = ["35%", "50%", "100%"];
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
 
-  console.log(searchLocation);
-
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const locationSubscription = useRef(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
-
-  console.log("api: ", googleApi);
 
   useEffect(() => {
     startLocationUpdates();
@@ -85,8 +82,6 @@ const Index = () => {
       fetchRoutes();
     }
   }, [searchLocation]);
-
-  console.log(routesCoordinates);
 
   const showSettingsAlert = () => {
     Alert.alert(
@@ -234,6 +229,10 @@ const Index = () => {
     return points;
   };
 
+  const handleClose = () => {
+    bottomSheetRef.current?.close();
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
@@ -241,6 +240,7 @@ const Index = () => {
           ref={mapRef}
           style={styles.map}
           showsTraffic={true}
+          showsCompass={false}
           customMapStyle={theme.dark ? nightMode : []}
           initialRegion={{
             latitude: location?.latitude || 14.5995,
@@ -268,12 +268,12 @@ const Index = () => {
                 strokeWidth={index === chosenRouteIndex ? 6 : 4}
                 zIndex={index === chosenRouteIndex ? 2 : 1}
               />
-              <Marker coordinate={route.midPoint} anchor={{ x: 0.5, y: 0 }}>
+              {/* <Marker coordinate={route.midPoint} anchor={{ x: 0.5, y: 0 }}>
                 <RouteCallout
                   duration={route.duration}
                   isSelected={index === chosenRouteIndex}
                 />
-              </Marker>
+              </Marker> */}
             </React.Fragment>
           ))}
         </MapView>
@@ -287,13 +287,14 @@ const Index = () => {
           placeholderTextColor="#fff"
           onPress={async (data, details = null) => {
             if (!details) return;
-
+          
             const newLocation = {
               latitude: details.geometry.location.lat,
               longitude: details.geometry.location.lng,
             };
-            console.log(data, details);
-
+          
+            console.log("Selected Place:", data.description);
+          
             setSearchLocation({
               location: newLocation,
               details: {
@@ -305,17 +306,22 @@ const Index = () => {
                 openingHours: details.current_opening_hours,
               },
             });
-            searchRef.current?.setAddressText(data.description);
-
+          
+            // Small timeout to ensure ref is available
+            setTimeout(() => {
+              searchRef.current?.setAddressText(data.description);
+            }, 0);
+          
             mapRef.current?.animateToRegion({
               ...newLocation,
               latitudeDelta: 0.005,
               longitudeDelta: 0.005,
             });
-            console.log(searchLocation);
+          
             bottomSheetRef.current?.snapToIndex(1);
             Keyboard.dismiss();
           }}
+          
           renderRightButton={() => {
             return searchLocation ? (
               <Ionicons
@@ -324,6 +330,7 @@ const Index = () => {
                   searchRef.current?.clear(); // Use optional chaining to avoid errors
                   console.log("clear");
                   setRoutesCoordinates([]);
+                  handleClose();
                 }}
                 name="close"
                 size={24}
@@ -396,12 +403,16 @@ const Index = () => {
           onPress={centerMap}
         />
 
-        
-        <BottomSheet enablePanDownToClose ref={bottomSheetRef} snapPoints={snapPoints}>
+        <BottomSheet
+          onClose={() => handleClose}
+          enablePanDownToClose
+          ref={bottomSheetRef}
+          snapPoints={snapPoints}
+        >
           <BottomSheetView className="px-5">
-              <Text className="text-2xl font-bold">
-                {searchLocation?.details.header}
-              </Text>
+            <Text className="text-2xl font-bold">
+              {searchLocation?.details.header}
+            </Text>
           </BottomSheetView>
         </BottomSheet>
       </View>
