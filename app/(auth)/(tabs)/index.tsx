@@ -10,13 +10,36 @@ import {
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import { FAB, useTheme } from "react-native-paper";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Callout, Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import nightMode from "@/utils/nightMap.json";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
+
+const RouteCallout = ({ duration, isSelected }) => {
+  const theme = useTheme();
+  const minutes = Math.round(duration / 60);
+  
+  return (
+    <View style={styles.calloutContainer}>
+      <View style={[
+        styles.routeCallout,
+        { 
+          backgroundColor: isSelected ? '#ff4444' : (theme.dark ? '#333' : '#fff'),
+        }
+      ]}>
+        <Text style={[
+          styles.routeCalloutText,
+          { color: isSelected ? '#fff' : (theme.dark ? '#fff' : '#000') }
+        ]}>
+          {minutes} min
+        </Text>
+      </View>
+    </View>
+  );
+};
 
 const Index = () => {
   const theme = useTheme();
@@ -30,7 +53,7 @@ const Index = () => {
   const locationSubscription = useRef(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
 
-  console.log(location, searchLocation);
+  console.log("api: ", googleApi);
 
   useEffect(() => {
     startLocationUpdates();
@@ -138,15 +161,18 @@ const Index = () => {
         const routesWithDetails = data.routes.map((route, index) => {
           const coordinates = decodePolyline(route.overview_polyline.points);
           const duration = route.legs[0]?.duration?.value ?? Infinity;
-          return { coordinates, duration, index };
+          // Calculate middle point for callout
+          const midIndex = Math.floor(coordinates.length / 2);
+          const midPoint = coordinates[midIndex];
+
+          return { coordinates, duration, midPoint, index };
         });
 
-        // Find the shortest route by duration
         const shortestRouteIndex = routesWithDetails.reduce((prev, curr) =>
           prev.duration < curr.duration ? prev : curr
         ).index;
 
-        setChosenRouteIndex(shortestRouteIndex); // Default to the shortest route
+        setChosenRouteIndex(shortestRouteIndex);
         setRoutesCoordinates(routesWithDetails);
       }
     } catch (error) {
@@ -213,19 +239,24 @@ const Index = () => {
               />
             </Marker>
           )}
-          {searchLocation && (
-            <Marker coordinate={searchLocation} title="Search Location" />
-          )}
+          {searchLocation && <Marker coordinate={searchLocation} />}
           {routesCoordinates.map((route, index) => (
-            <Polyline
-              key={index}
-              coordinates={route.coordinates}
-              tappable={true}
-              onPress={() => {setChosenRouteIndex(index); console.log("chosen: ",index)}} // Change selected route
-              strokeColor={index === chosenRouteIndex ? "red" : "gray"}
-              strokeWidth={index === chosenRouteIndex ? 6 : 4}
-              zIndex={index === chosenRouteIndex ? 2 : 1} // Ensure selected route is on top
-            />
+            <React.Fragment key={index}>
+              <Polyline
+                coordinates={route.coordinates}
+                tappable={true}
+                onPress={() => setChosenRouteIndex(index)}
+                strokeColor={index === chosenRouteIndex ? "red" : "gray"}
+                strokeWidth={index === chosenRouteIndex ? 6 : 4}
+                zIndex={index === chosenRouteIndex ? 2 : 1}
+              />
+              <Marker coordinate={route.midPoint} anchor={{ x: 0.5, y: 0 }}>
+                <RouteCallout
+                  duration={route.duration}
+                  isSelected={index === chosenRouteIndex}
+                />
+              </Marker>
+            </React.Fragment>
           ))}
         </MapView>
 
@@ -357,6 +388,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 85,
     right: 20,
+  },
+  routeCallout: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  routeCalloutText: {
+    fontSize: 9,
+    fontWeight: 'bold',
   },
 });
 
