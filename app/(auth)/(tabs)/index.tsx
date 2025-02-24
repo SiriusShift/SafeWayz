@@ -17,23 +17,33 @@ import nightMode from "@/utils/nightMap.json";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const RouteCallout = ({ duration, isSelected }) => {
   const theme = useTheme();
   const minutes = Math.round(duration / 60);
-  
+
   return (
     <View style={styles.calloutContainer}>
-      <View style={[
-        styles.routeCallout,
-        { 
-          backgroundColor: isSelected ? '#ff4444' : (theme.dark ? '#333' : '#fff'),
-        }
-      ]}>
-        <Text style={[
-          styles.routeCalloutText,
-          { color: isSelected ? '#fff' : (theme.dark ? '#fff' : '#000') }
-        ]}>
+      <View
+        style={[
+          styles.routeCallout,
+          {
+            backgroundColor: isSelected
+              ? "#ff4444"
+              : theme.dark
+              ? "#333"
+              : "#fff",
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.routeCalloutText,
+            { color: isSelected ? "#fff" : theme.dark ? "#fff" : "#000" },
+          ]}
+        >
           {minutes} min
         </Text>
       </View>
@@ -44,13 +54,19 @@ const RouteCallout = ({ duration, isSelected }) => {
 const Index = () => {
   const theme = useTheme();
   const { showSnackbar } = useSnackbar();
+  const snapPoints = ["25%", "50%", "100%"];
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
+
+  console.log(searchLocation);
+
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const locationSubscription = useRef(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
 
   console.log("api: ", googleApi);
@@ -154,18 +170,20 @@ const Index = () => {
 
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&departure_time=now&destination=${searchLocation.latitude},${searchLocation.longitude}&alternatives=true&traffic_model=best_guess&key=${googleApi}`
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&departure_time=now&destination=${searchLocation.location.latitude},${searchLocation.location.longitude}&alternatives=true&traffic_model=best_guess&key=${googleApi}`
       );
       const data = await response.json();
+      console.log(data);
       if (data.routes) {
         const routesWithDetails = data.routes.map((route, index) => {
           const coordinates = decodePolyline(route.overview_polyline.points);
-          const duration = route.legs[0]?.duration?.value ?? Infinity;
+          const duration = route.legs[0]?.duration ?? Infinity;
+          const distance = route.legs[0]?.distance ?? Infinity;
           // Calculate middle point for callout
           const midIndex = Math.floor(coordinates.length / 2);
           const midPoint = coordinates[midIndex];
 
-          return { coordinates, duration, midPoint, index };
+          return { coordinates, duration, midPoint, index, distance };
         });
 
         const shortestRouteIndex = routesWithDetails.reduce((prev, curr) =>
@@ -239,7 +257,7 @@ const Index = () => {
               />
             </Marker>
           )}
-          {searchLocation && <Marker coordinate={searchLocation} />}
+          {searchLocation && <Marker coordinate={searchLocation.location} />}
           {routesCoordinates.map((route, index) => (
             <React.Fragment key={index}>
               <Polyline
@@ -274,9 +292,19 @@ const Index = () => {
               latitude: details.geometry.location.lat,
               longitude: details.geometry.location.lng,
             };
-            console.log(newLocation);
+            console.log(data, details);
 
-            setSearchLocation(newLocation);
+            setSearchLocation({
+              location: newLocation,
+              details: {
+                header: details.name,
+                type: details.types[0],
+                rating: details.rating,
+                totalRating: details.user_ratings_total,
+                address: details.formatted_address,
+                openingHours: details.current_opening_hours,
+              },
+            });
             searchRef.current?.setAddressText(data.description);
 
             mapRef.current?.animateToRegion({
@@ -285,6 +313,7 @@ const Index = () => {
               longitudeDelta: 0.005,
             });
             console.log(searchLocation);
+            bottomSheetRef.current?.snapToIndex(1);
             Keyboard.dismiss();
           }}
           renderRightButton={() => {
@@ -366,6 +395,15 @@ const Index = () => {
           color="white"
           onPress={centerMap}
         />
+
+        
+        <BottomSheet enablePanDownToClose ref={bottomSheetRef} snapPoints={snapPoints}>
+          <BottomSheetView className="px-5">
+              <Text className="text-2xl font-bold">
+                {searchLocation?.details.header}
+              </Text>
+          </BottomSheetView>
+        </BottomSheet>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -394,14 +432,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   routeCalloutText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 

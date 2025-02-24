@@ -10,10 +10,11 @@ import { lightTheme, darkTheme } from "@/assets/theme/theme";
 import { Provider } from "react-redux";
 import store from "./store";
 import AuthProvider, { useAuth } from "@/context/authContext";
-import {StatusBar} from "expo-status-bar"
+import { StatusBar } from "expo-status-bar";
 import { SnackbarProvider } from "@/hooks/useSnackbar";
-import 'react-native-get-random-values';
-
+import "react-native-get-random-values";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { PortalProvider } from "@gorhom/portal";
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 
@@ -81,21 +82,18 @@ function AuthGuard() {
   return (
     <PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
       <SnackbarProvider>
+          <GestureHandlerRootView>
+            <StatusBar
+              networkActivityIndicatorVisible={true}
+              style={colorScheme === "dark" ? "dark" : "light"}
+            />
 
-      <StatusBar networkActivityIndicatorVisible={true} style={colorScheme === "dark" ? "dark" : "light" }/>
-      {/* <ThemeProvider
-        value={
-          colorScheme === "dark"
-            ? NavigationDarkTheme
-            : NavigationDefaultTheme
-        }
-      > */}
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(public)/sign-in" />
-          <Stack.Screen name="(public)/sign-up" />
-          <Stack.Screen name="(auth)/(tabs)" />
-        </Stack>
-      {/* </ThemeProvider> */}
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(public)/sign-in" />
+              <Stack.Screen name="(public)/sign-up" />
+              <Stack.Screen name="(auth)/(tabs)" />
+            </Stack>
+          </GestureHandlerRootView>
       </SnackbarProvider>
     </PaperProvider>
   );

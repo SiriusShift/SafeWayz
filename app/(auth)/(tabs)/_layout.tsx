@@ -10,7 +10,6 @@ const TabsLayout = () => {
 
   return (
     <>
-      
       <Tabs
         screenOptions={{
           tabBarShowLabel: false,
@@ -18,8 +17,9 @@ const TabsLayout = () => {
             backgroundColor: theme.colors.background,
             position: "absolute",
             alignContent: "center",
+            borderTopWidth: 1,
             height: 60,
-            borderTopWidth: 0, // Removes the white line (border)
+            // borderTopWidth: 0, // Removes the white line (border)
             elevation: 0, // Removes shadow on Android
             shadowOpacity: 0, // Removes shadow on iOS
           },
