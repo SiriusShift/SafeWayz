@@ -12,19 +12,23 @@ import React, { useEffect, useState, useRef } from "react";
 import { FAB, useTheme } from "react-native-paper";
 import MapView, { Callout, Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import nightMode from "@/utils/nightMap.json";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import Compass from "@/components/compass";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import BottomSheet from "@/components/BottomSheet";
+import BottomSheet, { BottomSheetRefProps } from "@/components/BottomSheet";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const RouteCallout = ({ duration, isSelected }) => {
   const theme = useTheme();
   const minutes = Math.round(duration / 60);
-
   return (
     <View style={styles.calloutContainer}>
       <View
@@ -55,6 +59,7 @@ const RouteCallout = ({ duration, isSelected }) => {
 const Index = () => {
   const theme = useTheme();
   const { showSnackbar } = useSnackbar();
+  const insets = useSafeAreaInsets();
   const snapPoints = ["35%", "50%", "100%"];
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
@@ -66,7 +71,7 @@ const Index = () => {
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const locationSubscription = useRef(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef<BottomSheetRefProps>(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
 
   useEffect(() => {
@@ -234,6 +239,10 @@ const Index = () => {
     bottomSheetRef.current?.close();
   };
 
+  const handleOpenSheet = () => {
+    bottomSheetRef.current?.snapToIndex(1);
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
@@ -337,7 +346,14 @@ const Index = () => {
               longitudeDelta: 0.005,
             });
 
-            bottomSheetRef.current?.snapToIndex(1);
+            const isActive = bottomSheetRef.current?.isActive();
+            if (isActive) {
+              bottomSheetRef.current?.scrollTo(0);
+            } else {
+              bottomSheetRef.current?.scrollTo(-200);
+            }
+
+            bottomSheetRef.current?.scrollTo(200);
             Keyboard.dismiss();
           }}
           renderRightButton={() => {
@@ -420,7 +436,9 @@ const Index = () => {
           color="white"
           onPress={centerMap}
         />
-        <BottomSheet />
+        <BottomSheet ref={bottomSheetRef}>
+          <Text>Hello</Text>
+        </BottomSheet>
       </View>
     </TouchableWithoutFeedback>
   );
