@@ -82,7 +82,7 @@ function AuthGuard() {
   return (
     <PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
       <SnackbarProvider>
-          <GestureHandlerRootView>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <StatusBar
               networkActivityIndicatorVisible={true}
               style={colorScheme === "dark" ? "dark" : "light"}

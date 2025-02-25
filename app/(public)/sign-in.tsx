@@ -17,6 +17,7 @@ import StyledView from "@/components/StyledView";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { usePostSigninMutation } from "@/features/authentication/api/authApi";
 import { useAuth } from "@/context/authContext";
+import BottomSheet from "@/components/BottomSheet";
 const signIn = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const {showSnackbar} = useSnackbar();

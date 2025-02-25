@@ -17,9 +17,9 @@ import nightMode from "@/utils/nightMap.json";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import Compass from "@/components/compass";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import BottomSheet from "@/components/BottomSheet";
 
 const RouteCallout = ({ duration, isSelected }) => {
   const theme = useTheme();
@@ -61,6 +61,7 @@ const Index = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
+  console.log(routesCoordinates, chosenRouteIndex);
 
   const mapRef = useRef(null);
   const searchRef = useRef(null);
@@ -258,24 +259,42 @@ const Index = () => {
             </Marker>
           )}
           {searchLocation && <Marker coordinate={searchLocation.location} />}
-          {routesCoordinates.map((route, index) => (
-            <React.Fragment key={index}>
-              <Polyline
-                coordinates={route.coordinates}
-                tappable={true}
-                onPress={() => setChosenRouteIndex(index)}
-                strokeColor={index === chosenRouteIndex ? "red" : "gray"}
-                strokeWidth={index === chosenRouteIndex ? 6 : 4}
-                zIndex={index === chosenRouteIndex ? 2 : 1}
-              />
-              {/* <Marker coordinate={route.midPoint} anchor={{ x: 0.5, y: 0 }}>
-                <RouteCallout
-                  duration={route.duration}
-                  isSelected={index === chosenRouteIndex}
+          {routesCoordinates.map((route, index) => {
+            const zIndex = isChosen
+              ? routesCoordinates.length + 1
+              : routesCoordinates.length - index;
+            const isChosen = index === chosenRouteIndex;
+            return (
+              <React.Fragment key={index}>
+                <Polyline
+                  coordinates={route.coordinates}
+                  tappable={true}
+                  onPress={(e) => {
+                    // Prevent event propagation
+                    e.stopPropagation && e.stopPropagation();
+
+                    // Update the chosen route index
+                    setChosenRouteIndex(index);
+
+                    // Optional: If you want to provide feedback when a route is selected
+                    if (route.onSelect) {
+                      route.onSelect(index);
+                    }
+                  }}
+                  strokeColor={isChosen ? "red" : "gray"}
+                  strokeWidth={isChosen ? 6 : 4}
+                  zIndex={zIndex}
+                  // Increase touch area for easier selection
+                  strokeLinecap="round"
+                  lineDashPattern={[0]} // Solid line
+                  lineJoin="round"
+                  // Optional: Add this if your map library supports it
+                  // hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 />
-              </Marker> */}
-            </React.Fragment>
-          ))}
+                {/* Marker code commented out as in your original */}
+              </React.Fragment>
+            );
+          })}
         </MapView>
 
         <GooglePlacesAutocomplete
@@ -287,14 +306,14 @@ const Index = () => {
           placeholderTextColor="#fff"
           onPress={async (data, details = null) => {
             if (!details) return;
-          
+
             const newLocation = {
               latitude: details.geometry.location.lat,
               longitude: details.geometry.location.lng,
             };
-          
+
             console.log("Selected Place:", data.description);
-          
+
             setSearchLocation({
               location: newLocation,
               details: {
@@ -306,22 +325,21 @@ const Index = () => {
                 openingHours: details.current_opening_hours,
               },
             });
-          
+
             // Small timeout to ensure ref is available
             setTimeout(() => {
               searchRef.current?.setAddressText(data.description);
             }, 0);
-          
+
             mapRef.current?.animateToRegion({
               ...newLocation,
               latitudeDelta: 0.005,
               longitudeDelta: 0.005,
             });
-          
+
             bottomSheetRef.current?.snapToIndex(1);
             Keyboard.dismiss();
           }}
-          
           renderRightButton={() => {
             return searchLocation ? (
               <Ionicons
@@ -402,19 +420,7 @@ const Index = () => {
           color="white"
           onPress={centerMap}
         />
-
-        <BottomSheet
-          onClose={() => handleClose}
-          enablePanDownToClose
-          ref={bottomSheetRef}
-          snapPoints={snapPoints}
-        >
-          <BottomSheetView className="px-5">
-            <Text className="text-2xl font-bold">
-              {searchLocation?.details.header}
-            </Text>
-          </BottomSheetView>
-        </BottomSheet>
+        <BottomSheet />
       </View>
     </TouchableWithoutFeedback>
   );
