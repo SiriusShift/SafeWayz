@@ -7,28 +7,27 @@ import {
   Text,
   TouchableWithoutFeedback,
   Keyboard,
+  TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FAB, useTheme } from "react-native-paper";
 import MapView, { Callout, Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import nightMode from "@/utils/nightMap.json";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Ionicons } from "@expo/vector-icons";
 import { useSnackbar } from "@/hooks/useSnackbar";
-import Compass from "@/components/compass";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import BottomSheet, { BottomSheetRefProps } from "@/components/BottomSheet";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+import BottomSheet, {
+  BottomSheetScrollView,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import StyledText from "@/components/StyledText";
 
 const RouteCallout = ({ duration, isSelected }) => {
   const theme = useTheme();
   const minutes = Math.round(duration / 60);
+
   return (
     <View style={styles.calloutContainer}>
       <View
@@ -59,19 +58,18 @@ const RouteCallout = ({ duration, isSelected }) => {
 const Index = () => {
   const theme = useTheme();
   const { showSnackbar } = useSnackbar();
-  const insets = useSafeAreaInsets();
   const snapPoints = ["35%", "50%", "100%"];
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
-  console.log(routesCoordinates, chosenRouteIndex);
+  console.log(routesCoordinates);
 
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const locationSubscription = useRef(null);
-  const bottomSheetRef = useRef<BottomSheetRefProps>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
 
   useEffect(() => {
@@ -177,18 +175,21 @@ const Index = () => {
       console.log(data);
       if (data.routes) {
         const routesWithDetails = data.routes.map((route, index) => {
+          console.log(route);
           const coordinates = decodePolyline(route.overview_polyline.points);
           const duration = route.legs[0]?.duration ?? Infinity;
           const distance = route.legs[0]?.distance ?? Infinity;
+          const summary = route.summary;
           // Calculate middle point for callout
           const midIndex = Math.floor(coordinates.length / 2);
           const midPoint = coordinates[midIndex];
 
-          return { coordinates, duration, midPoint, index, distance };
+          return { coordinates, duration, midPoint, index, summary, distance };
         });
 
         const shortestRouteIndex = routesWithDetails.reduce((prev, curr) =>
-          prev.duration < curr.duration ? prev : curr
+          prev.duration.value < curr.duration.value ? prev : curr,
+          routesWithDetails[0]
         ).index;
 
         setChosenRouteIndex(shortestRouteIndex);
@@ -238,10 +239,41 @@ const Index = () => {
   const handleClose = () => {
     bottomSheetRef.current?.close();
   };
+  const renderItem = useCallback(
+    (item, index) => {
+      const isSelected = chosenRouteIndex === index;
 
-  const handleOpenSheet = () => {
-    bottomSheetRef.current?.snapToIndex(1);
-  };
+      return (
+        <TouchableOpacity
+          onPress={() => setChosenRouteIndex(index)}
+          key={index}
+          style={[
+            styles.itemContainer,
+            {
+              borderLeftColor: isSelected
+                ? theme.colors.primary
+                : theme.dark
+                ? "#ffffff"
+                : "#000000",
+            },
+          ]}
+        >
+          <View className="flex-row justify-between">
+            <StyledText className="text-2xl font-bold">
+              {item.duration.text}
+            </StyledText>
+            <StyledText className="text-xl font-semibold">
+              {item.distance.text}
+            </StyledText>
+          </View>
+          <View>
+            <StyledText>Via {item.summary}</StyledText>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [chosenRouteIndex, theme]
+  );
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -295,7 +327,7 @@ const Index = () => {
                   zIndex={zIndex}
                   // Increase touch area for easier selection
                   strokeLinecap="round"
-                  lineDashPattern={[0]} // Solid line
+                  // lineDashPattern={[0]} // Solid line
                   lineJoin="round"
                   // Optional: Add this if your map library supports it
                   // hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -330,7 +362,7 @@ const Index = () => {
                 type: details.types[0],
                 rating: details.rating,
                 totalRating: details.user_ratings_total,
-                address: details.formatted_address,
+                address: data.structured_formatting.secondary_text,
                 openingHours: details.current_opening_hours,
               },
             });
@@ -346,14 +378,7 @@ const Index = () => {
               longitudeDelta: 0.005,
             });
 
-            const isActive = bottomSheetRef.current?.isActive();
-            if (isActive) {
-              bottomSheetRef.current?.scrollTo(0);
-            } else {
-              bottomSheetRef.current?.scrollTo(-200);
-            }
-
-            bottomSheetRef.current?.scrollTo(200);
+            bottomSheetRef.current?.snapToIndex(1);
             Keyboard.dismiss();
           }}
           renderRightButton={() => {
@@ -436,8 +461,29 @@ const Index = () => {
           color="white"
           onPress={centerMap}
         />
-        <BottomSheet ref={bottomSheetRef}>
-          <Text>Hello</Text>
+
+        <BottomSheet
+          onClose={() => handleClose}
+          enablePanDownToClose
+          ref={bottomSheetRef}
+          index={-1}
+          backgroundStyle={{
+            backgroundColor: theme.dark ? "#333" : "#fff",
+          }}
+          handleIndicatorStyle={{
+            backgroundColor: theme.dark ? "#fff" : "#000",
+          }}
+          snapPoints={snapPoints}
+        >
+          <BottomSheetView className="px-5">
+            <StyledText className="text-2xl font-bold">
+              {searchLocation?.details.header}
+            </StyledText>
+            <StyledText>{searchLocation?.details.address}</StyledText>
+            <BottomSheetScrollView style={{ marginVertical: 10 }}>
+              {routesCoordinates.map(renderItem)}
+            </BottomSheetScrollView>
+          </BottomSheetView>
         </BottomSheet>
       </View>
     </TouchableWithoutFeedback>
@@ -475,6 +521,12 @@ const styles = StyleSheet.create({
   routeCalloutText: {
     fontSize: 9,
     fontWeight: "bold",
+  },
+  itemContainer: {
+    borderLeftWidth: 4,
+    height: 100,
+    marginVertical: 5,
+    paddingHorizontal: 20,
   },
 });
 
