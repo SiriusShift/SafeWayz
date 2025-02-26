@@ -168,27 +168,64 @@ const Index = () => {
     if (!location || !searchLocation) return;
 
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&departure_time=now&destination=${searchLocation.location.latitude},${searchLocation.location.longitude}&alternatives=true&traffic_model=best_guess&key=${googleApi}`
-      );
+      const departureTime = new Date(Date.now() + 60 * 1000).toISOString();
+
+      const apiUrl =
+        "https://routes.googleapis.com/directions/v2:computeRoutes";
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": googleApi,
+          "X-Goog-FieldMask":
+            "routes.duration,routes.distanceMeters,routes.polyline,routes.legs,routes.routeLabels,routes.travelAdvisory,routes.travelAdvisory.tollInfo,routes.routeToken",
+        },
+        body: JSON.stringify({
+          origin: {
+            location: {
+              latLng: {
+                latitude: location.latitude,
+                longitude: location.longitude,
+              },
+            },
+          },
+          destination: {
+            location: {
+              latLng: {
+                latitude: searchLocation.location.latitude,
+                longitude: searchLocation.location.longitude,
+              },
+            },
+          },
+          travelMode: "TWO_WHEELER",
+          routingPreference: "TRAFFIC_AWARE",
+          computeAlternativeRoutes: true,
+          departureTime, // Uses the correct format now
+          units: "METRIC",
+        }),
+      });
+
       const data = await response.json();
       console.log(data);
+
       if (data.routes) {
         const routesWithDetails = data.routes.map((route, index) => {
           console.log(route);
-          const coordinates = decodePolyline(route.overview_polyline.points);
-          const duration = route.legs[0]?.duration ?? Infinity;
-          const distance = route.legs[0]?.distance ?? Infinity;
-          const summary = route.summary;
+          const coordinates = decodePolyline(route.polyline.encodedPolyline);
+          const duration = parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
+          const distance = route.distanceMeters ?? Infinity;
+          // const summary = route.summary;
           // Calculate middle point for callout
           const midIndex = Math.floor(coordinates.length / 2);
           const midPoint = coordinates[midIndex];
 
-          return { coordinates, duration, midPoint, index, summary, distance };
+          return { coordinates, duration, midPoint, index, distance };
         });
 
-        const shortestRouteIndex = routesWithDetails.reduce((prev, curr) =>
-          prev.duration.value < curr.duration.value ? prev : curr,
+        const shortestRouteIndex = routesWithDetails.reduce(
+          (prev, curr) =>
+            prev.duration < curr.duration ? prev : curr,
           routesWithDetails[0]
         ).index;
 
@@ -242,6 +279,9 @@ const Index = () => {
   const renderItem = useCallback(
     (item, index) => {
       const isSelected = chosenRouteIndex === index;
+      const hours = Math.floor(item.duration / 3600);
+      const minutes = Math.floor((item.duration % 3600) / 60);
+
 
       return (
         <TouchableOpacity
@@ -260,15 +300,15 @@ const Index = () => {
         >
           <View className="flex-row justify-between">
             <StyledText className="text-2xl font-bold">
-              {item.duration.text}
+              {hours ? `${hours} hr ` : ""} {minutes} min
             </StyledText>
             <StyledText className="text-xl font-semibold">
-              {item.distance.text}
+              {(item.distance / 1000).toFixed(2)} km
             </StyledText>
           </View>
-          <View>
+          {/* <View>
             <StyledText>Via {item.summary}</StyledText>
-          </View>
+          </View> */}
         </TouchableOpacity>
       );
     },
@@ -524,7 +564,7 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     borderLeftWidth: 4,
-    height: 100,
+    height: 50,
     marginVertical: 5,
     paddingHorizontal: 20,
   },
