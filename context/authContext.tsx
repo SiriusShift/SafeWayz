@@ -63,6 +63,7 @@ export default function AuthProvider({ children }) {
 
   const logout = async () => {
     await SecureStore.deleteItemAsync("user");
+    await SecureStore.deleteItemAsync("accessToken");
     setUser(null);
   };
 

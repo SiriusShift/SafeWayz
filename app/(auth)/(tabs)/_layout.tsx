@@ -78,7 +78,7 @@ const TabsLayout = () => {
         />
 
         {/* Profile Screen Tab */}
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="profile"
           options={{
             title: "Profile",
@@ -108,12 +108,12 @@ const TabsLayout = () => {
               </View>
             ),
           }}
-        />
+        /> */}
 
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Profile",
+            title: "Settings",
             headerShown: false,
             tabBarIcon: ({ focused }) => (
               <View
@@ -121,6 +121,7 @@ const TabsLayout = () => {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
+                  width: 50,
                   gap: 2,
                 }}
               >
@@ -136,7 +137,7 @@ const TabsLayout = () => {
                     fontSize: 10,
                   }}
                 >
-                  Profile
+                  Settings
                 </Text>
               </View>
             ),
