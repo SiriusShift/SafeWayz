@@ -213,7 +213,8 @@ const Index = () => {
         const routesWithDetails = data.routes.map((route, index) => {
           console.log(route);
           const coordinates = decodePolyline(route.polyline.encodedPolyline);
-          const duration = parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
+          const duration =
+            parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
           const distance = route.distanceMeters ?? Infinity;
           // const summary = route.summary;
           // Calculate middle point for callout
@@ -224,8 +225,7 @@ const Index = () => {
         });
 
         const shortestRouteIndex = routesWithDetails.reduce(
-          (prev, curr) =>
-            prev.duration < curr.duration ? prev : curr,
+          (prev, curr) => (prev.duration < curr.duration ? prev : curr),
           routesWithDetails[0]
         ).index;
 
@@ -281,7 +281,6 @@ const Index = () => {
       const isSelected = chosenRouteIndex === index;
       const hours = Math.floor(item.duration / 3600);
       const minutes = Math.floor((item.duration % 3600) / 60);
-
 
       return (
         <TouchableOpacity
@@ -380,6 +379,9 @@ const Index = () => {
 
         <GooglePlacesAutocomplete
           placeholder="Search"
+          textInputProps={{
+            placeholderTextColor: theme.dark ? "#fff" : "#000",
+          }}
           ref={searchRef}
           currentLocation={true}
           currentLocationLabel="Current Location"
@@ -445,7 +447,7 @@ const Index = () => {
           renderLeftButton={() => (
             <Image
               style={{ width: 30, height: 30 }}
-              source={require("../../../assets/images/icon.png")}
+              source={require("../../../assets/images/adaptive-icon.png")}
             />
           )}
           styles={{
@@ -459,10 +461,10 @@ const Index = () => {
             textInputContainer: {
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: theme.dark ? "#808080" : "#fff",
+              backgroundColor: theme.dark ? "#333" : "#fff",
               borderRadius: 8,
               paddingHorizontal: 10,
-              elevation: 5, // Add slight elevation for better shadow effect
+              elevation: 5,
             },
             textInput: {
               height: 50,
@@ -471,8 +473,9 @@ const Index = () => {
               color: theme.dark ? "#fff" : "#000",
               fontSize: 18,
             },
+            // Dropdown background
             listView: {
-              backgroundColor: "#fff",
+              backgroundColor: theme.dark ? "#333" : "#fff", // Adjust based on theme
               borderRadius: 8,
               marginTop: 5,
               elevation: 5,
@@ -481,11 +484,22 @@ const Index = () => {
               shadowOffset: { width: 0, height: 2 },
               shadowRadius: 4,
             },
+            // Individual row styling
             row: {
               padding: 15,
               height: 50,
               flexDirection: "row",
               alignItems: "center",
+              backgroundColor: theme.dark ? "#333" : "#fff", // Row color
+            },
+            // Separator between rows
+            separator: {
+              height: 1,
+              backgroundColor: theme.dark ? "#555" : "#ddd", // Separator color
+            },
+            description: {
+              fontSize: 15,
+              color: theme.dark ? "#fff" : "#000", // Description text color
             },
           }}
         />

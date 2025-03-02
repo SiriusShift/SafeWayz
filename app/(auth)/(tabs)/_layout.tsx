@@ -111,7 +111,7 @@ const TabsLayout = () => {
         /> */}
 
         <Tabs.Screen
-          name="settings"
+          name="(settings)/index"
           options={{
             title: "Settings",
             headerShown: false,
@@ -130,7 +130,7 @@ const TabsLayout = () => {
                   size={22}
                   className="flex items-center"
                   color={focused ? theme.colors.onSurface : "gray"}
-                  />
+                />
                 <Text
                   style={{
                     color: focused ? theme.colors.onSurface : "gray",
@@ -141,6 +141,13 @@ const TabsLayout = () => {
                 </Text>
               </View>
             ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="(settings)/vehicle"
+          options={{
+            href: null,
           }}
         />
       </Tabs>
