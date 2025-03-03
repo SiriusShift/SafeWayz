@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FAB, useTheme } from "react-native-paper";
-import MapView, { Callout, Marker, Polyline } from "react-native-maps";
+import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import nightMode from "@/utils/nightMap.json";
@@ -23,54 +23,64 @@ import BottomSheet, {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import StyledText from "@/components/StyledText";
+import * as SecureStore from "expo-secure-store";
 
-const RouteCallout = ({ duration, isSelected }) => {
-  const theme = useTheme();
-  const minutes = Math.round(duration / 60);
+const images = {
+  car: require("@/assets/images/car.png"),
+  motor: require("@/assets/images/motorbike.png"),
+}
 
-  return (
-    <View style={styles.calloutContainer}>
-      <View
-        style={[
-          styles.routeCallout,
-          {
-            backgroundColor: isSelected
-              ? "#ff4444"
-              : theme.dark
-              ? "#333"
-              : "#fff",
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.routeCalloutText,
-            { color: isSelected ? "#fff" : theme.dark ? "#fff" : "#000" },
-          ]}
-        >
-          {minutes} min
-        </Text>
-      </View>
-    </View>
-  );
-};
+// const RouteCallout = ({ duration, isSelected }) => {
+//   const theme = useTheme();
+//   const minutes = Math.round(duration / 60);
+
+//   return (
+//     <View style={styles.calloutContainer}>
+//       <View
+//         style={[
+//           styles.routeCallout,
+//           {
+//             backgroundColor: isSelected
+//               ? "#ff4444"
+//               : theme.dark
+//               ? "#333"
+//               : "#fff",
+//           },
+//         ]}
+//       >
+//         <Text
+//           style={[
+//             styles.routeCalloutText,
+//             { color: isSelected ? "#fff" : theme.dark ? "#fff" : "#000" },
+//           ]}
+//         >
+//           {minutes} min
+//         </Text>
+//       </View>
+//     </View>
+//   );
+// };
 
 const Index = () => {
   const theme = useTheme();
+  const type = SecureStore.getItem("vehicleType");
+  const [vehicleType, setVehicleType] = useState(null);
   const { showSnackbar } = useSnackbar();
   const snapPoints = ["35%", "50%", "100%"];
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
-  console.log(routesCoordinates);
+  const [mapReady, setMapReady] = useState(false);
 
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const locationSubscription = useRef(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
+  
+  // Define mapStyle outside of render and keep it consistent
+  const mapStyle = theme.dark ? nightMode : [];
 
   useEffect(() => {
     startLocationUpdates();
@@ -80,6 +90,17 @@ const Index = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const fetchVehicleType = async () => {
+      const storedVehicleType = await SecureStore.getItemAsync("vehicleType");
+      if (storedVehicleType) {
+        setVehicleType(JSON.parse(storedVehicleType)); // Parse if it's stored as JSON
+      }
+    };
+  
+    fetchVehicleType();
+  }, [type]);
 
   useEffect(() => {
     if (searchLocation) {
@@ -125,14 +146,16 @@ const Index = () => {
 
           setLocation(userLocation);
 
-          mapRef.current?.animateToRegion(
-            {
-              ...userLocation,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            },
-            1000
-          );
+          if (mapReady && mapRef.current) {
+            mapRef.current.animateToRegion(
+              {
+                ...userLocation,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              },
+              1000
+            );
+          }
         }
       );
     } catch (error) {
@@ -141,7 +164,7 @@ const Index = () => {
   };
 
   const centerMap = () => {
-    if (location && mapRef.current) {
+    if (location && mapRef.current && mapReady) {
       mapRef.current.animateToRegion(
         {
           ...location,
@@ -198,26 +221,22 @@ const Index = () => {
               },
             },
           },
-          travelMode: "TWO_WHEELER",
+          travelMode: vehicleType?.mode || "DRIVE",
           routingPreference: "TRAFFIC_AWARE",
           computeAlternativeRoutes: true,
-          departureTime, // Uses the correct format now
+          departureTime,
           units: "METRIC",
         }),
       });
 
       const data = await response.json();
-      console.log(data);
 
       if (data.routes) {
         const routesWithDetails = data.routes.map((route, index) => {
-          console.log(route);
           const coordinates = decodePolyline(route.polyline.encodedPolyline);
           const duration =
             parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
           const distance = route.distanceMeters ?? Infinity;
-          // const summary = route.summary;
-          // Calculate middle point for callout
           const midIndex = Math.floor(coordinates.length / 2);
           const midPoint = coordinates[midIndex];
 
@@ -276,6 +295,7 @@ const Index = () => {
   const handleClose = () => {
     bottomSheetRef.current?.close();
   };
+  
   const renderItem = useCallback(
     (item, index) => {
       const isSelected = chosenRouteIndex === index;
@@ -305,24 +325,29 @@ const Index = () => {
               {(item.distance / 1000).toFixed(2)} km
             </StyledText>
           </View>
-          {/* <View>
-            <StyledText>Via {item.summary}</StyledText>
-          </View> */}
         </TouchableOpacity>
       );
     },
     [chosenRouteIndex, theme]
   );
 
+  // Container background style to match map theme
+  const containerBackgroundStyle = {
+    backgroundColor: theme.dark ? "#333" : "#fff"
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <View style={styles.container}>
+      <View style={[styles.container, containerBackgroundStyle]}>
         <MapView
           ref={mapRef}
+          provider={PROVIDER_GOOGLE}
           style={styles.map}
           showsTraffic={true}
           showsCompass={false}
-          customMapStyle={theme.dark ? nightMode : []}
+          customMapStyle={mapStyle}
+          onMapReady={() => setMapReady(true)}
+          // Apply initial map style immediately
           initialRegion={{
             latitude: location?.latitude || 14.5995,
             longitude: location?.longitude || 120.9842,
@@ -330,33 +355,26 @@ const Index = () => {
             longitudeDelta: 0.05,
           }}
         >
-          {location && (
+          {mapReady && location && (
             <Marker coordinate={location} title="Your Location">
               <Image
-                source={require("../../../assets/images/car.png")}
+                source={images[vehicleType?.activeImg || "car"]}
                 style={{ width: 30, height: 30, resizeMode: "contain" }}
               />
             </Marker>
           )}
-          {searchLocation && <Marker coordinate={searchLocation.location} />}
-          {routesCoordinates.map((route, index) => {
-            const zIndex = isChosen
-              ? routesCoordinates.length + 1
-              : routesCoordinates.length - index;
+          {mapReady && searchLocation && <Marker coordinate={searchLocation.location} />}
+          {mapReady && routesCoordinates.map((route, index) => {
             const isChosen = index === chosenRouteIndex;
+            const zIndex = isChosen ? routesCoordinates.length + 1 : routesCoordinates.length - index;
             return (
               <React.Fragment key={index}>
                 <Polyline
                   coordinates={route.coordinates}
                   tappable={true}
                   onPress={(e) => {
-                    // Prevent event propagation
                     e.stopPropagation && e.stopPropagation();
-
-                    // Update the chosen route index
                     setChosenRouteIndex(index);
-
-                    // Optional: If you want to provide feedback when a route is selected
                     if (route.onSelect) {
                       route.onSelect(index);
                     }
@@ -364,14 +382,9 @@ const Index = () => {
                   strokeColor={isChosen ? "red" : "gray"}
                   strokeWidth={isChosen ? 6 : 4}
                   zIndex={zIndex}
-                  // Increase touch area for easier selection
                   strokeLinecap="round"
-                  // lineDashPattern={[0]} // Solid line
                   lineJoin="round"
-                  // Optional: Add this if your map library supports it
-                  // hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 />
-                {/* Marker code commented out as in your original */}
               </React.Fragment>
             );
           })}
@@ -395,8 +408,6 @@ const Index = () => {
               longitude: details.geometry.location.lng,
             };
 
-            console.log("Selected Place:", data.description);
-
             setSearchLocation({
               location: newLocation,
               details: {
@@ -409,16 +420,17 @@ const Index = () => {
               },
             });
 
-            // Small timeout to ensure ref is available
             setTimeout(() => {
               searchRef.current?.setAddressText(data.description);
             }, 0);
 
-            mapRef.current?.animateToRegion({
-              ...newLocation,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            });
+            if (mapReady && mapRef.current) {
+              mapRef.current.animateToRegion({
+                ...newLocation,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              });
+            }
 
             bottomSheetRef.current?.snapToIndex(1);
             Keyboard.dismiss();
@@ -428,14 +440,13 @@ const Index = () => {
               <Ionicons
                 onPress={() => {
                   setSearchLocation(null);
-                  searchRef.current?.clear(); // Use optional chaining to avoid errors
-                  console.log("clear");
+                  searchRef.current?.clear();
                   setRoutesCoordinates([]);
                   handleClose();
                 }}
                 name="close"
                 size={24}
-                color="black"
+                color={theme.dark ? "white" : "black"}
               />
             ) : null;
           }}
@@ -473,9 +484,8 @@ const Index = () => {
               color: theme.dark ? "#fff" : "#000",
               fontSize: 18,
             },
-            // Dropdown background
             listView: {
-              backgroundColor: theme.dark ? "#333" : "#fff", // Adjust based on theme
+              backgroundColor: theme.dark ? "#333" : "#fff",
               borderRadius: 8,
               marginTop: 5,
               elevation: 5,
@@ -484,22 +494,20 @@ const Index = () => {
               shadowOffset: { width: 0, height: 2 },
               shadowRadius: 4,
             },
-            // Individual row styling
             row: {
               padding: 15,
               height: 50,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: theme.dark ? "#333" : "#fff", // Row color
+              backgroundColor: theme.dark ? "#333" : "#fff",
             },
-            // Separator between rows
             separator: {
               height: 1,
-              backgroundColor: theme.dark ? "#555" : "#ddd", // Separator color
+              backgroundColor: theme.dark ? "#555" : "#ddd",
             },
             description: {
               fontSize: 15,
-              color: theme.dark ? "#fff" : "#000", // Description text color
+              color: theme.dark ? "#fff" : "#000",
             },
           }}
         />

@@ -7,75 +7,69 @@ import { Appbar, Button, Divider, List, useTheme } from "react-native-paper";
 import StyledText from "@/components/StyledText";
 import { useRouter } from "expo-router";
 import { usePostLogoutMutation } from "@/features/authentication/api/authApi";
+import { Ionicons } from "@expo/vector-icons";
 
 const Index = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const theme = useTheme();
   const router = useRouter();
 
-  const [logoutTrigger, { isLoading }] = usePostLogoutMutation();
-  const handleLogout = async () => {
-    try {
-      await logoutTrigger().unwrap();
-      logout();
-    } catch (error) {
-      if (error?.data?.message === "Token has expired") {
-        logout();
-      }
-    }
-  };
   return (
     <>
-      <Appbar.Header className="flex justify-between">
+      {/* <Appbar.Header className="flex justify-between">
         <Appbar.BackAction onPress={() => router.replace("/(auth)/(tabs)")} />
-        {/* <Appbar.Action icon="logout" onPress={() => handleLogout()} /> */}
-      </Appbar.Header>
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        <Appbar.Action icon="logout" onPress={() => handleLogout()} />
+      </Appbar.Header> */}
+      <View
+        style={{ flex: 1, backgroundColor: theme.colors.background, gap: 10 }}
+        className="flex flex-col pt-0 pb-10"
       >
-        <View className="flex flex-col pt-0 py-10">
-          <View className="flex items-center w-full mb-5 gap-5">
-            <Image source={defaultImage} className="w-20 h-20 rounded-full" />
-            <View className="flex-col items-center">
+        <View style={{ padding: 20, paddingBottom: 0 }}>
+          <View
+            style={[
+              {
+                backgroundColor: theme?.dark ? "#222" : "#fff",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 3.84,
+                elevation: 3,
+                borderRadius: 10,
+              },
+            ]}
+            className="flex flex-row p-4 rounded-lg w-full gap-5"
+          >
+            <Image source={defaultImage} className="w-16 h-16 rounded-full" />
+            <View className="flex-col justify-center">
               <StyledText className="text-xl text-center font-bold">
                 {user?.name}
               </StyledText>
-              <Text className="text-gray-500 text-center font">
-                {user?.role}
-              </Text>
-              <Button
-                mode="contained"
-                compact
-                icon={"pencil"}
-                className="mt-5 w-36"
-              >
-                Edit Profile
-              </Button>
+              <Text className="text-gray-500 font">{user?.username}</Text>
             </View>
           </View>
-          <List.Section>
-            <List.Subheader style={{ paddingHorizontal: 20 }}>
-              Settings
-            </List.Subheader>
-            <List.Item
-              title="Vehicle Type"
-              style={{ paddingHorizontal: 20 }}
-              onPress={() => router.push("/(auth)/(tabs)/(settings)/vehicle")}
-              left={() => (
-                <List.Icon
-                  icon="car"
-                  color="#808080"
-                  style={{
-                    padding: 10,
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: 10,
-                  }}
-                />
-              )}
-            />
-          </List.Section>
         </View>
-      </SafeAreaView>
+        <List.Section>
+          <List.Subheader style={{ paddingHorizontal: 20, paddingVertical: 5 }}>
+            Settings
+          </List.Subheader>
+          <List.Item
+            title="Vehicle Type"
+            style={{ paddingHorizontal: 20, paddingVertical: 10 }}
+            onPress={() => router.push("/(auth)/(tabs)/(settings)/vehicle")}
+            left={() => (
+              <List.Icon
+                icon="car"
+                color="#fff"
+                style={{
+                  padding: 10,
+                  backgroundColor: "red",
+                  borderRadius: 10,
+                }}
+              />
+            )}
+          />
+        </List.Section>
+      </View>
     </>
   );
 };
