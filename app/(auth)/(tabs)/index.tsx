@@ -24,45 +24,48 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import StyledText from "@/components/StyledText";
 import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
+
+// Helper function to calculate distance between two points
+const calculateDistance = (point1, point2) => {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371; // Radius of the earth in km
+  const dLat = toRad(point2.latitude - point1.latitude);
+  const dLon = toRad(point2.longitude - point1.longitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(point1.latitude)) *
+      Math.cos(toRad(point2.latitude)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c * 1000; // Convert to meters
+};
+
+// Function to find the closest point on the route
+const findClosestPointOnRoute = (userLocation, routeCoordinates) => {
+  let minDistance = Infinity;
+  let closestIndex = 0;
+
+  routeCoordinates.forEach((point, index) => {
+    const distance = calculateDistance(userLocation, point);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  return { closestIndex, minDistance };
+};
 
 const images = {
   car: require("@/assets/images/car.png"),
   motor: require("@/assets/images/motorbike.png"),
-}
-
-// const RouteCallout = ({ duration, isSelected }) => {
-//   const theme = useTheme();
-//   const minutes = Math.round(duration / 60);
-
-//   return (
-//     <View style={styles.calloutContainer}>
-//       <View
-//         style={[
-//           styles.routeCallout,
-//           {
-//             backgroundColor: isSelected
-//               ? "#ff4444"
-//               : theme.dark
-//               ? "#333"
-//               : "#fff",
-//           },
-//         ]}
-//       >
-//         <Text
-//           style={[
-//             styles.routeCalloutText,
-//             { color: isSelected ? "#fff" : theme.dark ? "#fff" : "#000" },
-//           ]}
-//         >
-//           {minutes} min
-//         </Text>
-//       </View>
-//     </View>
-//   );
-// };
+};
 
 const Index = () => {
   const theme = useTheme();
+  const router = useRouter()
   const type = SecureStore.getItem("vehicleType");
   const [vehicleType, setVehicleType] = useState(null);
   const { showSnackbar } = useSnackbar();
@@ -72,6 +75,10 @@ const Index = () => {
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
   const [mapReady, setMapReady] = useState(false);
+  
+  // New state for route tracking
+  const [trackedRoute, setTrackedRoute] = useState([]);
+  const [remainingRoute, setRemainingRoute] = useState([]);
 
   const mapRef = useRef(null);
   const searchRef = useRef(null);
@@ -107,6 +114,27 @@ const Index = () => {
       fetchRoutes();
     }
   }, [searchLocation]);
+
+  // Update route tracking when route or location changes
+  useEffect(() => {
+    if (chosenRouteIndex !== null && 
+        routesCoordinates.length > 0 && 
+        location && 
+        routesCoordinates[chosenRouteIndex]?.coordinates) {
+      
+      const currentRoute = routesCoordinates[chosenRouteIndex];
+      
+      // Find the closest point on the route
+      const { closestIndex } = findClosestPointOnRoute(location, currentRoute.coordinates);
+      
+      // Split the route into tracked and remaining segments
+      const newTrackedRoute = currentRoute.coordinates.slice(0, closestIndex + 1);
+      const newRemainingRoute = currentRoute.coordinates.slice(closestIndex + 1);
+      
+      setTrackedRoute(newTrackedRoute);
+      setRemainingRoute(newRemainingRoute);
+    }
+  }, [location, chosenRouteIndex, routesCoordinates]);
 
   const showSettingsAlert = () => {
     Alert.alert(
@@ -160,6 +188,18 @@ const Index = () => {
       );
     } catch (error) {
       console.error("Error starting location updates:", error);
+    }
+  };
+
+  const zoomOutToFitRoute = () => {
+    if (mapRef.current && location && searchLocation) {
+      mapRef.current.fitToCoordinates(
+        [location, searchLocation.location],
+        {
+          edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+          animated: true,
+        }
+      );
     }
   };
 
@@ -250,6 +290,7 @@ const Index = () => {
 
         setChosenRouteIndex(shortestRouteIndex);
         setRoutesCoordinates(routesWithDetails);
+        zoomOutToFitRoute();
       }
     } catch (error) {
       console.error("Error fetching routes:", error);
@@ -339,7 +380,7 @@ const Index = () => {
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={[styles.container, containerBackgroundStyle]}>
-        <MapView
+      <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
@@ -365,10 +406,34 @@ const Index = () => {
           )}
           {mapReady && searchLocation && <Marker coordinate={searchLocation.location} />}
           {mapReady && routesCoordinates.map((route, index) => {
-            const isChosen = index === chosenRouteIndex;
-            const zIndex = isChosen ? routesCoordinates.length + 1 : routesCoordinates.length - index;
+            const zIndex = isChosen
+            ? routesCoordinates.length + 1
+            : routesCoordinates.length - index;
+          const isChosen = index === chosenRouteIndex;
+            
             return (
               <React.Fragment key={index}>
+                {/* Tracked portion of the route */}
+                <Polyline
+                  coordinates={trackedRoute}
+                  strokeColor="green"
+                  strokeWidth={6}
+                  zIndex={zIndex + 1}
+                  strokeLinecap="round"
+                  lineJoin="round"
+                />
+                
+                {/* Remaining portion of the route */}
+                <Polyline
+                  coordinates={remainingRoute}
+                  strokeColor="gray"
+                  strokeWidth={4}
+                  zIndex={zIndex}
+                  strokeLinecap="round"
+                  lineJoin="round"
+                />
+                
+                {/* Original route selection logic */}
                 <Polyline
                   coordinates={route.coordinates}
                   tappable={true}
@@ -379,7 +444,7 @@ const Index = () => {
                       route.onSelect(index);
                     }
                   }}
-                  strokeColor={isChosen ? "red" : "gray"}
+                  strokeColor={isChosen ? "red" : "blue"}
                   strokeWidth={isChosen ? 6 : 4}
                   zIndex={zIndex}
                   strokeLinecap="round"
@@ -521,7 +586,7 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={centerMap}
+          onPress={() => router.push("/(auth)/(tabs)/(reports)")}
         />
 
         <BottomSheet

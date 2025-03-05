@@ -16,10 +16,6 @@ const Index = () => {
 
   return (
     <>
-      {/* <Appbar.Header className="flex justify-between">
-        <Appbar.BackAction onPress={() => router.replace("/(auth)/(tabs)")} />
-        <Appbar.Action icon="logout" onPress={() => handleLogout()} />
-      </Appbar.Header> */}
       <View
         style={{ flex: 1, backgroundColor: theme.colors.background, gap: 10 }}
         className="flex flex-col pt-0 pb-10"
