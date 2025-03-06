@@ -27,7 +27,10 @@ const SettingsLayout = () => {
       await logoutTrigger().unwrap();
       logout();
     } catch (error) {
+      console.log(error);
       if (error?.data?.message === "Token has expired") {
+        logout();
+      } else {
         logout();
       }
     }
