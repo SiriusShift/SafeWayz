@@ -150,6 +150,20 @@ const TabsLayout = () => {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="(reports)/index"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="(reports)/form"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
       </Tabs>
     </>
   );
