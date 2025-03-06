@@ -5,7 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 
 export default function Index() {
   const router = useRouter();
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const handleNavigation = async () => {
@@ -14,9 +14,9 @@ export default function Index() {
       await SplashScreen.hideAsync();
 
       if (user) {
-        router.replace("/(auth)/(tabs)/"); 
+        router.replace("/(auth)/(tabs)/");
       } else {
-        router.replace("/sign-in"); 
+        router.replace("/sign-in");
       }
     };
 

@@ -40,9 +40,15 @@ export default {
           image: "./assets/images/splash-icon.png",
           resizeMode: "cover",
           backgroundColor: "#ffffff",
-          "dark": {
-            image: "./assets/images/splash-icon-dark.png",
-          }
+          // dark: {
+          //   image: "./assets/images/splash-icon-dark.png",
+          // },
+        },
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          RNMapboxMapsDownloadToken: process.env.EXPO_PUBLIC_MAPBOX_SECRET,
         },
       ],
       "expo-secure-store",
@@ -53,6 +59,9 @@ export default {
     extra: {
       router: {
         origin: false,
+      },
+      "expo-router": {
+        appRoot: "app",
       },
       eas: {
         projectId: "00995566-e432-43bc-9f33-dbae9115e4aa",
