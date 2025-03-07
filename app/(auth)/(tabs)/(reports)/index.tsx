@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
@@ -7,16 +8,20 @@ import {
   TouchableOpacity,
   View,
   ImageBackground,
+  Animated,
 } from "react-native";
 import { ActivityIndicator, useTheme } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function App() {
   const theme = useTheme();
+  const router = useRouter();
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState<any>(null);
   const [flashMode, setFlashMode] = useState("off");
+  const [opacity] = useState(new Animated.Value(0));
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -26,130 +31,92 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (permission?.granted) {
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [permission]);
+
   if (!permission) {
     return (
-      <ActivityIndicator
-        animating={true}
-        size="large"
-        color={theme.colors.primary}
-      />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "black" }}>
+        <ActivityIndicator animating={true} size="large" color={theme.colors.primary} />
+      </View>
     );
+    
   }
 
-  function toggleCameraFacing() {
-    setFacing((current) => (current === "back" ? "front" : "back"));
-  }
+  // function toggleCameraFacing() {
+  //   setFacing((current) => (current === "back" ? "front" : "back"));
+  // }
+
+  // function returnToHome() {
+  //   router.push("/(auth)/(tabs)");
+  // }
 
   const takePicture = async () => {
     const options = { quality: 0.5, base64: true, exif: true };
     const photo: any = await cameraRef?.current.takePictureAsync(options);
-    console.log(photo);
     setPreviewVisible(true);
-    //setStartCamera(false)
     setCapturedImage(photo);
   };
 
+  const retakePicture = () => {
+    setCapturedImage(null);
+    setPreviewVisible(false);
+  };
+
+  const savePhoto = () => {
+    console.log("Photo saved:", capturedImage.uri);
+    alert("Photo saved successfully!");
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       {previewVisible && capturedImage ? (
-        <CameraPreview photo={capturedImage} />
+        <CameraPreview
+          photo={capturedImage}
+          retakePicture={retakePicture}
+          savePhoto={savePhoto}
+        />
       ) : (
-        <CameraView
-          style={styles.camera}
-          ref={cameraRef}
-          responsiveOrientationWhenOrientationLocked
-          facing={facing}
-        >
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={takePicture}
+        <Animated.View style={{ flex: 1, opacity }}>
+          {permission?.granted && (
+            <CameraView
+              style={styles.camera}
+              ref={cameraRef}
+              responsiveOrientationWhenOrientationLocked
+              facing={facing}
             >
-              <Ionicons name="camera" size={30} color="black" />
-            </TouchableOpacity>
-            {/* <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={toggleCameraFacing}
-          >
-            <Ionicons name="camera-reverse" size={30} color="white" />
-          </TouchableOpacity> */}
-          </View>
-        </CameraView>
+              <TouchableOpacity
+                style={styles.captureButton}
+                onPress={takePicture}
+              >
+                <Ionicons name="camera" size={30} color="white" />
+              </TouchableOpacity>
+            </CameraView>
+          )}
+        </Animated.View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const CameraPreview = ({ photo, retakePicture, savePhoto }: any) => {
-  console.log("sdsfds", photo);
   return (
-    <View
-      style={{
-        backgroundColor: "transparent",
-        flex: 1,
-        width: "100%",
-        height: "100%",
-      }}
-    >
-      <ImageBackground
-        source={{ uri: photo && photo.uri }}
-        style={{
-          flex: 1,
-        }}
-      >
-        <View
-          style={{
-            flex: 1,
-            flexDirection: "column",
-            padding: 15,
-            justifyContent: "flex-end",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <TouchableOpacity
-              onPress={retakePicture}
-              style={{
-                width: 130,
-                height: 40,
-
-                alignItems: "center",
-                borderRadius: 4,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#fff",
-                  fontSize: 20,
-                }}
-              >
-                Re-take
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={savePhoto}
-              style={{
-                width: 130,
-                height: 40,
-
-                alignItems: "center",
-                borderRadius: 4,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#fff",
-                  fontSize: 20,
-                }}
-              >
-                save photo
-              </Text>
-            </TouchableOpacity>
-          </View>
+    <View style={styles.container}>
+      <ImageBackground source={{ uri: photo?.uri }} style={{ flex: 1 }}>
+        <View style={styles.previewControls}>
+          <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
+            <Text>Retake</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.retakeButton} onPress={savePhoto}>
+            <Text>Next</Text>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
@@ -164,29 +131,31 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  buttonContainer: {
+  previewControls: {
     position: "absolute",
     bottom: 80,
-    flexDirection: "row",
-    width: "100%",
-    justifyContent: "center",
     paddingHorizontal: 30,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  retakeButton: {
+    width: 100,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "white",
+    justifyContent: "center",
     alignItems: "center",
   },
   captureButton: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: "#fff",
+    backgroundColor: "red",
     justifyContent: "center",
-    alignItems: "center",
-  },
-  toggleButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
+    position: "absolute",
+    bottom: 80,
+    alignSelf: "center",
     alignItems: "center",
   },
 });

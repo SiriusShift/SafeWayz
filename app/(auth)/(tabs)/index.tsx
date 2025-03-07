@@ -223,7 +223,7 @@ const Index = () => {
     if (!enabled) {
       showSettingsAlert();
     } else {
-      showSnackbar("Location Enabled", 3000, "success");
+      console.log("Location services are enabled");
     }
   };
 

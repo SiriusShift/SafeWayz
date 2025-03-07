@@ -151,7 +151,7 @@ const TabsLayout = () => {
           }}
         />
         <Tabs.Screen
-          name="(reports)/index"
+          name="(reports)"
           options={{
             href: null,
             headerShown: false,
