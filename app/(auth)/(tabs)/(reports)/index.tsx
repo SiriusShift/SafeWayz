@@ -1,5 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  CameraView,
+  CameraType,
+  useCameraPermissions,
+  FlashMode,
+} from "expo-camera";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -19,8 +24,10 @@ export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [torch, setTorch] = useState(false);
   const [capturedImage, setCapturedImage] = useState<any>(null);
-  const [flashMode, setFlashMode] = useState("off");
+  // Define flashMode with the correct type
+  const [flashMode, setFlashMode] = useState<FlashMode>("off");
   const [opacity] = useState(new Animated.Value(0));
 
   const cameraRef = useRef<CameraView>(null);
@@ -43,26 +50,35 @@ export default function App() {
 
   if (!permission) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "black" }}>
-        <ActivityIndicator animating={true} size="large" color={theme.colors.primary} />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "black",
+        }}
+      >
+        <ActivityIndicator
+          animating={true}
+          size="large"
+          color={theme.colors.primary}
+        />
       </View>
     );
-    
   }
 
-  // function toggleCameraFacing() {
-  //   setFacing((current) => (current === "back" ? "front" : "back"));
-  // }
-
-  // function returnToHome() {
-  //   router.push("/(auth)/(tabs)");
-  // }
-
   const takePicture = async () => {
-    const options = { quality: 0.5, base64: true, exif: true };
-    const photo: any = await cameraRef?.current.takePictureAsync(options);
-    setPreviewVisible(true);
-    setCapturedImage(photo);
+    if (!cameraRef?.current) return;
+
+    try {
+      const options = { quality: 0.5, base64: true, exif: true };
+      const photo = await cameraRef.current.takePictureAsync(options);
+      setPreviewVisible(true);
+      setCapturedImage(photo);
+    } catch (error) {
+      console.error("Error taking picture:", error);
+      alert("Failed to take picture. Please try again.");
+    }
   };
 
   const retakePicture = () => {
@@ -89,14 +105,58 @@ export default function App() {
             <CameraView
               style={styles.camera}
               ref={cameraRef}
+              enableTorch={torch}
+              flash={flashMode}
               responsiveOrientationWhenOrientationLocked
               facing={facing}
             >
+              <View
+                style={{
+                  flexDirection: "column",
+                  top: 10,
+                  gap: 10,
+                  right: 10,
+                  position: "absolute",
+                }}
+              >
+                <TouchableOpacity
+                  style={{
+                    padding: 10,
+                    borderRadius: 50,
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                  }}
+                  onPress={() => setTorch((current) => !current)}
+                >
+                  <MaterialCommunityIcons
+                    name={torch ? "flashlight" : "flashlight-off"}
+                    size={30}
+                    color="white"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    padding: 10,
+                    borderRadius: 50,
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                  }}
+                  onPress={() =>
+                    setFlashMode((current) =>
+                      current === "off" ? "on" : "off"
+                    )
+                  }
+                >
+                  <Ionicons
+                    name={flashMode === "on" ? "flash" : "flash-off"}
+                    size={30}
+                    color="white"
+                  />
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
                 style={styles.captureButton}
                 onPress={takePicture}
               >
-                <Ionicons name="camera" size={30} color="white" />
+                <Ionicons name="camera" size={30} color="black" />
               </TouchableOpacity>
             </CameraView>
           )}
@@ -151,7 +211,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: "red",
+    backgroundColor: "white",
     justifyContent: "center",
     position: "absolute",
     bottom: 80,
