@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import {
   CameraView,
   CameraType,
@@ -25,7 +25,8 @@ export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [torch, setTorch] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<any>(null);
+  const [backImage, setBackImage] = useState<any>(null);
+  const [frontImage, setFrontImage] = useState<any>(null);
   // Define flashMode with the correct type
   const [flashMode, setFlashMode] = useState<FlashMode>("off");
   const [opacity] = useState(new Animated.Value(0));
@@ -71,33 +72,56 @@ export default function App() {
     if (!cameraRef?.current) return;
 
     try {
-      const options = { quality: 0.5, base64: true, exif: true };
+      const options = {
+        quality: 0.5,
+        base64: true,
+        exif: true,
+        skipProcessing: false, // ensure image processing happens
+      };
       const photo = await cameraRef.current.takePictureAsync(options);
-      setPreviewVisible(true);
-      setCapturedImage(photo);
+      if (facing === "back") {
+        setPreviewVisible(true);
+        setBackImage(photo);
+      } else if (facing === "front") {
+        setPreviewVisible(true);
+        setFrontImage(photo);
+      }
     } catch (error) {
       console.error("Error taking picture:", error);
       alert("Failed to take picture. Please try again.");
     }
   };
 
+  const nextPage = () => {
+    setPreviewVisible(false);
+    setFacing("front");
+  };
+
+  const previousPage = () => {
+    setPreviewVisible(true);
+    if (facing === "front") {
+      setFacing("back");
+    }
+  };
+
   const retakePicture = () => {
-    setCapturedImage(null);
+    facing === "back" ? setBackImage(null) : setFrontImage(null);
     setPreviewVisible(false);
   };
 
-  const savePhoto = () => {
-    console.log("Photo saved:", capturedImage.uri);
-    alert("Photo saved successfully!");
-  };
+  // const savePhoto = () => {
+  //   console.log("Photo saved:", capturedImage.uri);
+  //   alert("Photo saved successfully!");
+  // };
 
   return (
     <SafeAreaView style={{ backgroundColor: theme.colors.background, flex: 1 }}>
-      {previewVisible && capturedImage ? (
+      {previewVisible && (facing === "back" ? backImage : frontImage) ? (
         <CameraPreview
-          photo={capturedImage}
+          photo={facing === "back" ? backImage : frontImage}
           retakePicture={retakePicture}
-          savePhoto={savePhoto}
+          nextPage={nextPage}
+          // savePhoto={savePhoto}
         />
       ) : (
         <Animated.View style={{ flex: 1, opacity }}>
@@ -106,6 +130,7 @@ export default function App() {
               style={styles.camera}
               ref={cameraRef}
               enableTorch={torch}
+              mirror={true}
               flash={flashMode}
               responsiveOrientationWhenOrientationLocked
               facing={facing}
@@ -152,6 +177,14 @@ export default function App() {
                   />
                 </TouchableOpacity>
               </View>
+              {facing === "front" && (
+                <TouchableOpacity
+                  onPress={previousPage}
+                  style={styles.backButton}
+                >
+                  <Feather name="chevron-left" size={30} color="white" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={styles.captureButton}
                 onPress={takePicture}
@@ -166,15 +199,23 @@ export default function App() {
   );
 }
 
-const CameraPreview = ({ photo, retakePicture, savePhoto }: any) => {
+const CameraPreview = ({ photo, retakePicture, savePhoto, nextPage }: any) => {
   return (
     <View style={styles.container}>
-      <ImageBackground source={{ uri: photo?.uri }} style={{ flex: 1 }}>
+      <ImageBackground
+        source={{ uri: photo?.uri }}
+        style={{
+          flex: 1,
+          width: "100%",
+          height: "100%",
+        }}
+        resizeMode="cover"
+      >
         <View style={styles.previewControls}>
           <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
             <Text>Retake</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.retakeButton} onPress={savePhoto}>
+          <TouchableOpacity style={styles.retakeButton} onPress={nextPage}>
             <Text>Next</Text>
           </TouchableOpacity>
         </View>
@@ -217,5 +258,13 @@ const styles = StyleSheet.create({
     bottom: 80,
     alignSelf: "center",
     alignItems: "center",
+  },
+  backButton: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    borderRadius: 50,
+    padding: 5,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });

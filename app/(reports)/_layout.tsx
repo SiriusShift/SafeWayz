@@ -10,8 +10,8 @@ export default function ReportsLayout() {
         cardStyle: { backgroundColor: "transparent" }, // removes the white flash
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Reports" }} />
-      <Stack.Screen name="form" options={{ title: "Vehicle Type" }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="form" />
     </Stack>
   );
 }

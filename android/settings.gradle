@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'SafeWayz'
+rootProject.name = 'PathAlert'
 
 dependencyResolutionManagement {
   versionCatalogs {

@@ -82,18 +82,20 @@ function AuthGuard() {
   return (
     <PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
       <SnackbarProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <StatusBar
-              networkActivityIndicatorVisible={true}
-              style={colorScheme === "dark" ? "dark" : "light"}
-            />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar
+            networkActivityIndicatorVisible={true}
+            style={colorScheme === "dark" ? "dark" : "light"}
+          />
 
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(public)/sign-in" />
-              <Stack.Screen name="(public)/sign-up" />
-              <Stack.Screen name="(auth)/(tabs)" />
-            </Stack>
-          </GestureHandlerRootView>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(public)/sign-in" />
+            <Stack.Screen name="(public)/sign-up" />
+            <Stack.Screen name="(auth)/(tabs)" />
+            <Stack.Screen name="(reports)" />
+            <Stack.Screen name="(reports)/forms" />
+          </Stack>
+        </GestureHandlerRootView>
       </SnackbarProvider>
     </PaperProvider>
   );

@@ -1,12 +1,12 @@
 import React from "react";
 import { View } from "react-native";
-import { Tabs } from "expo-router";
+import { Tabs, useSegments } from "expo-router";
 import { Text, useTheme } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
-import StyledText from "@/components/StyledText";
-
+import { usePathname } from "expo-router";
 const TabsLayout = () => {
   const theme = useTheme();
+  const segments = useSegments();
 
   return (
     <>

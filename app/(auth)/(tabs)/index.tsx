@@ -11,7 +11,12 @@ import {
 } from "react-native";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FAB, useTheme } from "react-native-paper";
-import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, {
+  Callout,
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import nightMode from "@/utils/nightMap.json";
@@ -65,7 +70,7 @@ const images = {
 
 const Index = () => {
   const theme = useTheme();
-  const router = useRouter()
+  const router = useRouter();
   const type = SecureStore.getItem("vehicleType");
   const [vehicleType, setVehicleType] = useState(null);
   const { showSnackbar } = useSnackbar();
@@ -75,7 +80,7 @@ const Index = () => {
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
   const [mapReady, setMapReady] = useState(false);
-  
+
   // New state for route tracking
   const [trackedRoute, setTrackedRoute] = useState([]);
   const [remainingRoute, setRemainingRoute] = useState([]);
@@ -85,7 +90,7 @@ const Index = () => {
   const locationSubscription = useRef(null);
   const bottomSheetRef = useRef(null);
   const googleApi = process.env.EXPO_PUBLIC_GOOGLE_API ?? "";
-  
+
   // Define mapStyle outside of render and keep it consistent
   const mapStyle = theme.dark ? nightMode : [];
 
@@ -105,7 +110,7 @@ const Index = () => {
         setVehicleType(JSON.parse(storedVehicleType)); // Parse if it's stored as JSON
       }
     };
-  
+
     fetchVehicleType();
   }, [type]);
 
@@ -117,20 +122,29 @@ const Index = () => {
 
   // Update route tracking when route or location changes
   useEffect(() => {
-    if (chosenRouteIndex !== null && 
-        routesCoordinates.length > 0 && 
-        location && 
-        routesCoordinates[chosenRouteIndex]?.coordinates) {
-      
+    if (
+      chosenRouteIndex !== null &&
+      routesCoordinates.length > 0 &&
+      location &&
+      routesCoordinates[chosenRouteIndex]?.coordinates
+    ) {
       const currentRoute = routesCoordinates[chosenRouteIndex];
-      
+
       // Find the closest point on the route
-      const { closestIndex } = findClosestPointOnRoute(location, currentRoute.coordinates);
-      
+      const { closestIndex } = findClosestPointOnRoute(
+        location,
+        currentRoute.coordinates
+      );
+
       // Split the route into tracked and remaining segments
-      const newTrackedRoute = currentRoute.coordinates.slice(0, closestIndex + 1);
-      const newRemainingRoute = currentRoute.coordinates.slice(closestIndex + 1);
-      
+      const newTrackedRoute = currentRoute.coordinates.slice(
+        0,
+        closestIndex + 1
+      );
+      const newRemainingRoute = currentRoute.coordinates.slice(
+        closestIndex + 1
+      );
+
       setTrackedRoute(newTrackedRoute);
       setRemainingRoute(newRemainingRoute);
     }
@@ -193,13 +207,10 @@ const Index = () => {
 
   const zoomOutToFitRoute = () => {
     if (mapRef.current && location && searchLocation) {
-      mapRef.current.fitToCoordinates(
-        [location, searchLocation.location],
-        {
-          edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-          animated: true,
-        }
-      );
+      mapRef.current.fitToCoordinates([location, searchLocation.location], {
+        edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+        animated: true,
+      });
     }
   };
 
@@ -336,7 +347,7 @@ const Index = () => {
   const handleClose = () => {
     bottomSheetRef.current?.close();
   };
-  
+
   const renderItem = useCallback(
     (item, index) => {
       const isSelected = chosenRouteIndex === index;
@@ -374,13 +385,13 @@ const Index = () => {
 
   // Container background style to match map theme
   const containerBackgroundStyle = {
-    backgroundColor: theme.dark ? "#333" : "#fff"
+    backgroundColor: theme.dark ? "#333" : "#fff",
   };
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={[styles.container, containerBackgroundStyle]}>
-      <MapView
+        <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
@@ -404,55 +415,58 @@ const Index = () => {
               />
             </Marker>
           )}
-          {mapReady && searchLocation && <Marker coordinate={searchLocation.location} />}
-          {mapReady && routesCoordinates.map((route, index) => {
-            const zIndex = isChosen
-            ? routesCoordinates.length + 1
-            : routesCoordinates.length - index;
-          const isChosen = index === chosenRouteIndex;
-            
-            return (
-              <React.Fragment key={index}>
-                {/* Tracked portion of the route */}
-                <Polyline
-                  coordinates={trackedRoute}
-                  strokeColor="green"
-                  strokeWidth={6}
-                  zIndex={zIndex + 1}
-                  strokeLinecap="round"
-                  lineJoin="round"
-                />
-                
-                {/* Remaining portion of the route */}
-                <Polyline
-                  coordinates={remainingRoute}
-                  strokeColor="gray"
-                  strokeWidth={4}
-                  zIndex={zIndex}
-                  strokeLinecap="round"
-                  lineJoin="round"
-                />
-                
-                {/* Original route selection logic */}
-                <Polyline
-                  coordinates={route.coordinates}
-                  tappable={true}
-                  onPress={(e) => {
-                    e.stopPropagation && e.stopPropagation();
-                    setChosenRouteIndex(index);
-                    if (route.onSelect) {
-                      route.onSelect(index);
-                    }
-                  }}
-                  strokeColor={isChosen ? "red" : "blue"}
-                  strokeWidth={isChosen ? 6 : 4}
-                  zIndex={zIndex}
-                  strokeLinecap="round"
-                  lineJoin="round"
-                />
-              </React.Fragment>
-            );
-          })}
+          {mapReady && searchLocation && (
+            <Marker coordinate={searchLocation.location} />
+          )}
+          {mapReady &&
+            routesCoordinates.map((route, index) => {
+              const zIndex = isChosen
+                ? routesCoordinates.length + 1
+                : routesCoordinates.length - index;
+              const isChosen = index === chosenRouteIndex;
+
+              return (
+                <React.Fragment key={index}>
+                  {/* Tracked portion of the route */}
+                  <Polyline
+                    coordinates={trackedRoute}
+                    strokeColor="green"
+                    strokeWidth={6}
+                    zIndex={zIndex + 1}
+                    strokeLinecap="round"
+                    lineJoin="round"
+                  />
+
+                  {/* Remaining portion of the route */}
+                  <Polyline
+                    coordinates={remainingRoute}
+                    strokeColor="gray"
+                    strokeWidth={4}
+                    zIndex={zIndex}
+                    strokeLinecap="round"
+                    lineJoin="round"
+                  />
+
+                  {/* Original route selection logic */}
+                  <Polyline
+                    coordinates={route.coordinates}
+                    tappable={true}
+                    onPress={(e) => {
+                      e.stopPropagation && e.stopPropagation();
+                      setChosenRouteIndex(index);
+                      if (route.onSelect) {
+                        route.onSelect(index);
+                      }
+                    }}
+                    strokeColor={isChosen ? "red" : "blue"}
+                    strokeWidth={isChosen ? 6 : 4}
+                    zIndex={zIndex}
+                    strokeLinecap="round"
+                    lineJoin="round"
+                  />
+                </React.Fragment>
+              );
+            })}
         </MapView>
 
         <GooglePlacesAutocomplete
@@ -586,7 +600,7 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={() => router.push("/(auth)/(tabs)/(reports)")}
+          onPress={() => router.replace("/(reports)")}
         />
 
         <BottomSheet

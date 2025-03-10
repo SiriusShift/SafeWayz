@@ -40,9 +40,6 @@ export default {
           image: "./assets/images/splash-icon.png",
           resizeMode: "cover",
           backgroundColor: "#ffffff",
-          "dark": {
-            image: "./assets/images/splash-icon-dark.png",
-          }
         },
       ],
       "expo-secure-store",
