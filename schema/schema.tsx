@@ -33,3 +33,12 @@ export const signUpSchema = {
     confirmPassword: "",
   },
 };
+
+export const forgotPasswordSchema = {
+  schema: yup.object().shape({
+    email: yup.string().email("Email is invalid").required("Email is required"),
+  }),
+  defaultValues: {
+    email: "",
+  },
+};

@@ -22,7 +22,15 @@ const authApi = api.injectEndpoints({
         url: "/logout",
         method: "POST",
       }),
+    }),
+
+    postSendResetCode: builder.mutation({
+      query: (body) => ({
+        url: "/send-reset-code",
+        method: "POST",
+        body,
+      }),
     })
   }),
 });
-export const { usePostSignupMutation, usePostSigninMutation, usePostLogoutMutation } = authApi;
+export const { usePostSignupMutation, usePostSigninMutation, usePostLogoutMutation, usePostSendResetCodeMutation } = authApi;

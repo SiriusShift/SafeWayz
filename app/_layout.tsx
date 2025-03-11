@@ -87,13 +87,13 @@ function AuthGuard() {
             networkActivityIndicatorVisible={true}
             style={colorScheme === "dark" ? "dark" : "light"}
           />
-
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(public)/sign-in" />
+            <Stack.Screen name="(public)/forgot-password" />
             <Stack.Screen name="(public)/sign-up" />
             <Stack.Screen name="(auth)/(tabs)" />
             <Stack.Screen name="(reports)" />
-            <Stack.Screen name="(reports)/forms" />
+            {/* <Stack.Screen name="(reports)/forms" /> */}
           </Stack>
         </GestureHandlerRootView>
       </SnackbarProvider>

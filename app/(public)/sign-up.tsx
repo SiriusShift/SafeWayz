@@ -17,31 +17,32 @@ import { Link, useNavigation } from "expo-router";
 import { usePostSignupMutation } from "@/features/authentication/api/authApi";
 import { useDispatch } from "react-redux";
 import StyledText from "@/components/StyledText";
-import StyledView from "@/components/StyledView"
+import StyledView from "@/components/StyledView";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { useAuth } from "@/context/authContext";
+import AuthLayout from "@/components/AuthLayout";
 
 const signUp = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const dispatch = useDispatch();
-  const {register} = useAuth();
-  const {showSnackbar} = useSnackbar();
+  const { register } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   const {
     control,
     handleSubmit,
     watch,
     getValues,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
     resolver: yupResolver(signUpSchema.schema),
     defaultValues: signUpSchema.defaultValues,
   });
 
-  const [signupTrigger, {isLoading}] = usePostSignupMutation();
-  
+  const [signupTrigger, { isLoading }] = usePostSignupMutation();
+
   console.log(errors);
 
   const onSubmit = async () => {
@@ -53,125 +54,143 @@ const signUp = () => {
       const response = await signupTrigger({
         fullname: data.fullname,
         username: data.username,
-        password: data.password
+        password: data.password,
+        email: data.email,
       }).unwrap();
       register(response);
 
       showSnackbar("Signup Successful!", 3000, "success");
-
     } catch (error) {
-      showSnackbar(error?.data?.message || "Signup Failed. Please Try Again", 3000, "danger");
+      showSnackbar(
+        error?.data?.message || "Signup Failed. Please Try Again",
+        3000,
+        "danger"
+      );
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <StyledView className="flex-1 justify-center items-center w-full gap-y-5">
-        {/* Logo */}
-        <Image source={Logo} style={{ height: 70, width: 70 }} />
+    <AuthLayout>
+      <Image source={Logo} style={{ height: 70, width: 70 }} />
 
-        {/* Welcome Text */}
-        <StyledText className="text-3xl font-bold">Create an account</StyledText>
-
-        {/* Input Fields */}
-        <View className="w-5/6 gap-y-3">
-          <Controller
-            control={control}
-            name="fullname"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label="Full Name"
-                mode="outlined"
-                error={!!errors.fullname}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="username"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label="Username"
-                mode="outlined"
-                error={!!errors.username}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.username && (
-            <Text style={{ color: "red" }}>{errors.username.message}</Text>
+      {/* Welcome Text */}
+      <StyledText className="text-3xl font-bold">Create an account</StyledText>
+      {/* Input Fields */}
+      <View className="w-5/6 gap-y-3">
+        <Controller
+          control={control}
+          name="fullname"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              label="Full Name"
+              mode="outlined"
+              error={!!errors.fullname}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
           )}
-
-          {/* <TextInput mode="outlined" label="Username" /> */}
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                mode="outlined"
-                label="Password"
-                secureTextEntry={!passwordVisible} // Toggle visibility
-                right={
-                  <TextInput.Icon
-                    icon={passwordVisible ? "eye-off" : "eye"} // Change icon dynamically
-                    onPress={() => setPasswordVisible(!passwordVisible)} // Toggle state
-                  />
-                }
-                error={!!errors.password}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.password && (
-            <Text style={{ color: "red" }}>{errors.password.message}</Text>
+        />
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              label="Email"
+              mode="outlined"
+              error={!!errors.email}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
           )}
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                mode="outlined"
-                label="Confirm Password"
-                secureTextEntry={!confirmVisible} // Toggle visibility
-                right={
-                  <TextInput.Icon
-                    icon={confirmVisible ? "eye-off" : "eye"} // Change icon dynamically
-                    onPress={() => setConfirmVisible(!confirmVisible)} // Toggle state
-                  />
-                }
-                error={!!errors.confirmPassword}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.confirmPassword && (
-            <Text style={{ color: "red" }}>
-              {errors.confirmPassword.message}
-            </Text>
+        />
+        <Controller
+          control={control}
+          name="username"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              label="Username"
+              mode="outlined"
+              error={!!errors.username}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
           )}
-        </View>
+        />
+        {errors.username && (
+          <Text style={{ color: "red" }}>{errors.username.message}</Text>
+        )}
 
-        {/* Sign In Button */}
-        <Button mode="contained" loading={isLoading} className="w-5/6 mt-4" onPress={onSubmit}>
-          {isLoading ? "" : "Sign Up"}
-        </Button>
-        <StyledText>
-          Already have an account?{" "}
-          <Link className="font-bold" href="/sign-in">
-            Sign In
-          </Link>
-        </StyledText>
-      </StyledView>
-    </TouchableWithoutFeedback>
+        {/* <TextInput mode="outlined" label="Username" /> */}
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              mode="outlined"
+              label="Password"
+              secureTextEntry={!passwordVisible} // Toggle visibility
+              right={
+                <TextInput.Icon
+                  icon={passwordVisible ? "eye-off" : "eye"} // Change icon dynamically
+                  onPress={() => setPasswordVisible(!passwordVisible)} // Toggle state
+                />
+              }
+              error={!!errors.password}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
+        />
+        {errors.password && (
+          <Text style={{ color: "red" }}>{errors.password.message}</Text>
+        )}
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              mode="outlined"
+              label="Confirm Password"
+              secureTextEntry={!confirmVisible} // Toggle visibility
+              right={
+                <TextInput.Icon
+                  icon={confirmVisible ? "eye-off" : "eye"} // Change icon dynamically
+                  onPress={() => setConfirmVisible(!confirmVisible)} // Toggle state
+                />
+              }
+              error={!!errors.confirmPassword}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
+        />
+        {errors.confirmPassword && (
+          <Text style={{ color: "red" }}>{errors.confirmPassword.message}</Text>
+        )}
+      </View>
+
+      {/* Sign In Button */}
+      <Button
+        mode="contained"
+        loading={isLoading}
+        className="w-5/6 mt-4"
+        disabled={!isValid || isLoading}
+        onPress={onSubmit}
+      >
+        {isLoading ? "" : "Sign Up"}
+      </Button>
+      <StyledText>
+        Already have an account?{" "}
+        <Link className="font-bold" href="/sign-in">
+          Sign In
+        </Link>
+      </StyledText>
+    </AuthLayout>
   );
 };
 

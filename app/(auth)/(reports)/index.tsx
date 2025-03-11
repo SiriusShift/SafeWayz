@@ -79,6 +79,7 @@ export default function App() {
         skipProcessing: false, // ensure image processing happens
       };
       const photo = await cameraRef.current.takePictureAsync(options);
+      console.log(photo)
       if (facing === "back") {
         setPreviewVisible(true);
         setBackImage(photo);
@@ -130,7 +131,6 @@ export default function App() {
               style={styles.camera}
               ref={cameraRef}
               enableTorch={torch}
-              mirror={true}
               flash={flashMode}
               responsiveOrientationWhenOrientationLocked
               facing={facing}
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   previewControls: {
     position: "absolute",
-    bottom: 80,
+    bottom: 30,
     paddingHorizontal: 30,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     justifyContent: "center",
     position: "absolute",
-    bottom: 80,
+    bottom: 30,
     alignSelf: "center",
     alignItems: "center",
   },

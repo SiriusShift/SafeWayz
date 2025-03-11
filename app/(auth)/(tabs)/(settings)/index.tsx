@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const Index = () => {
   const { user } = useAuth();
+  console.log("user: ",user);
   const theme = useTheme();
   const router = useRouter();
 
@@ -35,12 +36,12 @@ const Index = () => {
             ]}
             className="flex flex-row p-4 rounded-lg w-full gap-5"
           >
-            <Image source={defaultImage} className="w-16 h-16 rounded-full" />
+            <Image source={defaultImage} className="w-14 h-14 rounded-full" />
             <View className="flex-col justify-center">
               <StyledText className="text-xl text-center font-bold">
                 {user?.name}
               </StyledText>
-              <Text className="text-gray-500 font">{user?.username}</Text>
+              <Text className="text-gray-500 text-xs">{user?.email}</Text>
             </View>
           </View>
         </View>

@@ -440,7 +440,7 @@ const Index = () => {
                   {/* Remaining portion of the route */}
                   <Polyline
                     coordinates={remainingRoute}
-                    strokeColor="gray"
+                    strokeColor={isChosen ? "blue" : "gray"}
                     strokeWidth={4}
                     zIndex={zIndex}
                     strokeLinecap="round"
@@ -600,7 +600,7 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={() => router.replace("/(reports)")}
+          onPress={() => router.push("/(reports)")}
         />
 
         <BottomSheet
