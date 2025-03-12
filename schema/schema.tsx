@@ -42,3 +42,20 @@ export const forgotPasswordSchema = {
     email: "",
   },
 };
+
+export const resetPasswordSchema = {
+  schema: yup.object().shape({
+    code: yup.number().required("OTP is required"),
+    password: yup.string().required("Password is required").min(8, "Password must be at least 8 characters"),
+    confirmPassword: yup.string().required("Confirm Password is required").oneOf([yup.ref("password")], "Passwords must match"),
+  })
+}
+
+export const verifyCodeSchema = {
+  schema: yup.object().shape({
+    code: yup.number().required("OTP is required"),
+  }),
+  defaultValues: {
+    code: ""
+  }
+}

@@ -9,6 +9,14 @@ const authApi = api.injectEndpoints({
       }),
     }),
 
+    postVerifyEmail : builder.mutation({
+      query: (body) => ({
+        url: "/verify-email",
+        method: "POST",
+        body,
+      })
+    }),
+    
     postSignin: builder.mutation({
       query: (body) => ({
         url: "/sign-in",
@@ -31,6 +39,14 @@ const authApi = api.injectEndpoints({
         body,
       }),
     }),
+
+    postResetPassword: builder.mutation({
+      query: (body) => ({
+        url: "/reset-password",
+        method: "POST",
+        body,
+      })
+    })
   }),
 });
 export const {
@@ -38,4 +54,6 @@ export const {
   usePostSigninMutation,
   usePostLogoutMutation,
   usePostSendResetCodeMutation,
+  usePostResetPasswordMutation,
+  usePostVerifyEmailMutation
 } = authApi;
