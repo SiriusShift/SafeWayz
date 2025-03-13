@@ -21,7 +21,7 @@ const vehicleType = [
 const Vehicle = () => {
   const theme = useTheme();
   const router = useRouter();
-  const [activeVehicle, setActiveVehicle] = useState(null);
+  const [activeVehicle, setActiveVehicle] = useState(vehicleType[0]);
 
   useEffect(() => {
     const fetchActiveVehicle = async () => {

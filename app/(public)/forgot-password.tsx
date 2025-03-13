@@ -89,6 +89,7 @@ const ForgotPassword = () => {
       }).unwrap();
       reset();
       router.push("/sign-in");
+      showSnackbar("Reset Password Successful!", 3000, "success");
     } catch (err) {
       showSnackbar(
         err?.data?.message || "Reset Password Failed. Please Try Again",

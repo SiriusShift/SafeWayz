@@ -1,3 +1,4 @@
+import { clearCamera, setBackCamera, setFrontCamera } from "@/features/reports/reducers/reportsSlice";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import {
   CameraView,
@@ -14,24 +15,33 @@ import {
   View,
   ImageBackground,
   Animated,
+  Dimensions,
 } from "react-native";
+import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import { ActivityIndicator, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function App() {
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const reportImages = useSelector((state: any) => state.reports);
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [previewVisible, setPreviewVisible] = useState(false);
   const [torch, setTorch] = useState(false);
   const [backImage, setBackImage] = useState<any>(null);
+  const [zoom, setZoom] =useState<number>(0);
   const [frontImage, setFrontImage] = useState<any>(null);
   // Define flashMode with the correct type
   const [flashMode, setFlashMode] = useState<FlashMode>("off");
   const [opacity] = useState(new Animated.Value(0));
+  const [imageOrientation, setImageOrientation] = useState("portrait");
 
   const cameraRef = useRef<CameraView>(null);
+  const animatedZoom = useRef(new Animated.Value(zoom)).current;
+
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -48,6 +58,40 @@ export default function App() {
       }).start();
     }
   }, [permission]);
+
+  useEffect(() => {
+    if (reportImages.backCamera) {
+      setBackImage(reportImages.backCamera);
+    }
+    if (reportImages.frontCamera) {
+      setFrontImage(reportImages.frontCamera);
+    }
+
+    // Automatically show preview if images are present
+    if (reportImages.backCamera) {
+      setFacing("front");
+      setPreviewVisible(true);
+    }else if(reportImages.frontCamera){
+      setFacing("back");
+      setPreviewVisible(true);
+    }
+  }, [reportImages]);
+
+  const handlePinch = Animated.event(
+    [{ nativeEvent: { scale: animatedZoom } }],
+    { useNativeDriver: false } // Set to false since zoom affects the camera, not a UI element
+  );
+  
+  useEffect(() => {
+    animatedZoom.addListener(({ value }) => {
+      const clampedZoom = Math.min(Math.max(value, 0), 1); // Ensure zoom is between 0 and 1
+      setZoom(clampedZoom);
+    });
+  
+    return () => animatedZoom.removeAllListeners();
+  }, []);
+  
+  
 
   if (!permission) {
     return (
@@ -68,6 +112,7 @@ export default function App() {
     );
   }
 
+
   const takePicture = async () => {
     if (!cameraRef?.current) return;
 
@@ -79,7 +124,12 @@ export default function App() {
         skipProcessing: false, // ensure image processing happens
       };
       const photo = await cameraRef.current.takePictureAsync(options);
-      console.log(photo)
+      console.log(photo);
+
+      // Determine image orientation
+      const isLandscape = photo.width > photo.height;
+      setImageOrientation(isLandscape ? "landscape" : "portrait");
+
       if (facing === "back") {
         setPreviewVisible(true);
         setBackImage(photo);
@@ -94,14 +144,25 @@ export default function App() {
   };
 
   const nextPage = () => {
-    setPreviewVisible(false);
-    setFacing("front");
+    console.log("next!");
+    if (facing === "back") {
+      dispatch(setBackCamera(backImage));
+      setPreviewVisible(false);
+      setFacing("front");
+    } else if (facing === "front") {
+      dispatch(setFrontCamera(frontImage));
+      router.push("/(auth)/(reports)/form");
+    }
   };
 
   const previousPage = () => {
     setPreviewVisible(true);
     if (facing === "front") {
       setFacing("back");
+    }
+    if(facing==="back"){
+      router.push("/(auth)/(tabs)")
+      dispatch(clearCamera())
     }
   };
 
@@ -110,11 +171,6 @@ export default function App() {
     setPreviewVisible(false);
   };
 
-  // const savePhoto = () => {
-  //   console.log("Photo saved:", capturedImage.uri);
-  //   alert("Photo saved successfully!");
-  // };
-
   return (
     <SafeAreaView style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       {previewVisible && (facing === "back" ? backImage : frontImage) ? (
@@ -122,9 +178,11 @@ export default function App() {
           photo={facing === "back" ? backImage : frontImage}
           retakePicture={retakePicture}
           nextPage={nextPage}
-          // savePhoto={savePhoto}
+          imageOrientation={imageOrientation}
         />
       ) : (
+        <PinchGestureHandler onGestureEvent={handlePinch}>
+
         <Animated.View style={{ flex: 1, opacity }}>
           {permission?.granted && (
             <CameraView
@@ -132,6 +190,7 @@ export default function App() {
               ref={cameraRef}
               enableTorch={torch}
               flash={flashMode}
+              zoom={facing === "back" ? zoom : 0}
               responsiveOrientationWhenOrientationLocked
               facing={facing}
             >
@@ -177,14 +236,14 @@ export default function App() {
                   />
                 </TouchableOpacity>
               </View>
-              {facing === "front" && (
+              {/* {facing === "front" && ( */}
                 <TouchableOpacity
                   onPress={previousPage}
                   style={styles.backButton}
                 >
                   <Feather name="chevron-left" size={30} color="white" />
                 </TouchableOpacity>
-              )}
+              {/* )} */}
               <TouchableOpacity
                 style={styles.captureButton}
                 onPress={takePicture}
@@ -194,32 +253,57 @@ export default function App() {
             </CameraView>
           )}
         </Animated.View>
+        </PinchGestureHandler>
       )}
     </SafeAreaView>
   );
 }
 
-const CameraPreview = ({ photo, retakePicture, savePhoto, nextPage }: any) => {
+const CameraPreview = ({
+  photo,
+  retakePicture,
+  nextPage,
+  imageOrientation,
+}: any) => {
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+
+  // Calculate container styles based on orientation
+  const containerStyle = {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  };
+
+  // Calculate image styles based on orientation
+  const imageStyle =
+    imageOrientation === "landscape"
+      ? {
+          width: screenWidth,
+          height: screenWidth * (photo.height / photo.width),
+          alignSelf: "center",
+        }
+      : {
+          width: screenWidth,
+          height: screenHeight,
+        };
+
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <ImageBackground
         source={{ uri: photo?.uri }}
-        style={{
-          flex: 1,
-          width: "100%",
-          height: "100%",
-        }}
-        resizeMode="cover"
-      >
-        <View style={styles.previewControls}>
-          <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
-            <Text>Retake</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.retakeButton} onPress={nextPage}>
-            <Text>Next</Text>
-          </TouchableOpacity>
-        </View>
-      </ImageBackground>
+        style={imageStyle}
+        resizeMode="contain"
+      />
+      <View style={styles.previewControls}>
+        <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
+          <Text>Retake</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.retakeButton} onPress={nextPage}>
+          <Text>Next</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

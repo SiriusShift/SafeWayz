@@ -15,6 +15,7 @@ import { SnackbarProvider } from "@/hooks/useSnackbar";
 import "react-native-get-random-values";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalProvider } from "@gorhom/portal";
+import {AutocompleteDropdownContextProvider} from 'react-native-autocomplete-dropdown';
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 
@@ -80,6 +81,7 @@ function AuthGuard() {
   }
 
   return (
+    <AutocompleteDropdownContextProvider>
     <PaperProvider theme={colorScheme === "dark" ? darkTheme : lightTheme}>
       <SnackbarProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -98,5 +100,6 @@ function AuthGuard() {
         </GestureHandlerRootView>
       </SnackbarProvider>
     </PaperProvider>
+    </AutocompleteDropdownContextProvider>
   );
 }
