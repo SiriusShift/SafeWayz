@@ -104,7 +104,7 @@ const signIn = () => {
               />
             )}
           />
-          <Link href="/forgot-password" className="text-right">
+          <Link href="/forgot-password" style={{ color: theme.colors.onSurface }} className="text-right">
             Forgot Password?
           </Link>
           {errors.password && (

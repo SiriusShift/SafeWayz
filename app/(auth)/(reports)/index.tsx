@@ -144,7 +144,6 @@ export default function App() {
   };
 
   const nextPage = () => {
-    console.log("next!");
     if (facing === "back") {
       dispatch(setBackCamera(backImage));
       setPreviewVisible(false);
@@ -189,6 +188,7 @@ export default function App() {
               style={styles.camera}
               ref={cameraRef}
               enableTorch={torch}
+              mirror={false}
               flash={flashMode}
               zoom={facing === "back" ? zoom : 0}
               responsiveOrientationWhenOrientationLocked
@@ -273,7 +273,7 @@ const CameraPreview = ({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "black",
+    backgroundColor: "white",
   };
 
   // Calculate image styles based on orientation
@@ -294,14 +294,14 @@ const CameraPreview = ({
       <ImageBackground
         source={{ uri: photo?.uri }}
         style={imageStyle}
-        resizeMode="contain"
+        resizeMode="cover"
       />
       <View style={styles.previewControls}>
         <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
           <Text>Retake</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.retakeButton} onPress={nextPage}>
-          <Text>Next</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={nextPage}>
+          <Ionicons name="chevron-forward" size={30} color="black"/>
         </TouchableOpacity>
       </View>
     </View>
@@ -318,14 +318,13 @@ const styles = StyleSheet.create({
   },
   previewControls: {
     position: "absolute",
-    bottom: 30,
-    paddingHorizontal: 30,
+    bottom: 20,
+    paddingHorizontal: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     width: "100%",
   },
   retakeButton: {
-    width: 100,
+    width: 280,
     height: 40,
     borderRadius: 10,
     backgroundColor: "white",
@@ -341,6 +340,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30,
     alignSelf: "center",
+    alignItems: "center",
+  },
+  nextButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 35,
+    backgroundColor: "white",
+    justifyContent: "center",
+    position: "absolute",
+    bottom: 0,
+    right: 10,
     alignItems: "center",
   },
   backButton: {
