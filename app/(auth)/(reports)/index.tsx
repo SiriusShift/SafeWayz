@@ -1,5 +1,14 @@
-import { clearCamera, setBackCamera, setFrontCamera } from "@/features/reports/reducers/reportsSlice";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import {
+  clearCamera,
+  setBackCamera,
+  setFrontCamera,
+} from "@/features/reports/reducers/reportsSlice";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  Feather,
+  AntDesign,
+} from "@expo/vector-icons";
 import {
   CameraView,
   CameraType,
@@ -21,6 +30,7 @@ import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import { ActivityIndicator, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import * as ImageManipulator from "expo-image-manipulator";
 
 export default function App() {
   const theme = useTheme();
@@ -32,7 +42,7 @@ export default function App() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [torch, setTorch] = useState(false);
   const [backImage, setBackImage] = useState<any>(null);
-  const [zoom, setZoom] =useState<number>(0);
+  const [zoom, setZoom] = useState<number>(0);
   const [frontImage, setFrontImage] = useState<any>(null);
   // Define flashMode with the correct type
   const [flashMode, setFlashMode] = useState<FlashMode>("off");
@@ -41,7 +51,6 @@ export default function App() {
 
   const cameraRef = useRef<CameraView>(null);
   const animatedZoom = useRef(new Animated.Value(zoom)).current;
-
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -71,7 +80,7 @@ export default function App() {
     if (reportImages.backCamera) {
       setFacing("front");
       setPreviewVisible(true);
-    }else if(reportImages.frontCamera){
+    } else if (reportImages.frontCamera) {
       setFacing("back");
       setPreviewVisible(true);
     }
@@ -81,17 +90,15 @@ export default function App() {
     [{ nativeEvent: { scale: animatedZoom } }],
     { useNativeDriver: false } // Set to false since zoom affects the camera, not a UI element
   );
-  
+
   useEffect(() => {
     animatedZoom.addListener(({ value }) => {
       const clampedZoom = Math.min(Math.max(value, 0), 1); // Ensure zoom is between 0 and 1
       setZoom(clampedZoom);
     });
-  
+
     return () => animatedZoom.removeAllListeners();
   }, []);
-  
-  
 
   if (!permission) {
     return (
@@ -112,7 +119,6 @@ export default function App() {
     );
   }
 
-
   const takePicture = async () => {
     if (!cameraRef?.current) return;
 
@@ -121,19 +127,25 @@ export default function App() {
         quality: 0.5,
         base64: true,
         exif: true,
-        skipProcessing: false, // ensure image processing happens
+        skipProcessing: false,
       };
-      const photo = await cameraRef.current.takePictureAsync(options);
+      let photo = await cameraRef.current.takePictureAsync(options);
       console.log(photo);
 
-      // Determine image orientation
       const isLandscape = photo.width > photo.height;
       setImageOrientation(isLandscape ? "landscape" : "portrait");
+
+      // Mirror the image if using front camera
+      if (facing === "front") {
+        photo = await ImageManipulator.manipulateAsync(photo.uri, [
+          { flip: ImageManipulator.FlipType.Horizontal },
+        ]);
+      }
 
       if (facing === "back") {
         setPreviewVisible(true);
         setBackImage(photo);
-      } else if (facing === "front") {
+      } else {
         setPreviewVisible(true);
         setFrontImage(photo);
       }
@@ -160,9 +172,9 @@ export default function App() {
     if (facing === "front") {
       setFacing("back");
     }
-    if(facing==="back"){
-      router.push("/(auth)/(tabs)")
-      dispatch(clearCamera())
+    if (facing === "back") {
+      router.push("/(auth)/(tabs)");
+      dispatch(clearCamera());
     }
   };
 
@@ -172,7 +184,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: theme.colors.background, flex: 1 }}>
+    <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       {previewVisible && (facing === "back" ? backImage : frontImage) ? (
         <CameraPreview
           photo={facing === "back" ? backImage : frontImage}
@@ -182,80 +194,89 @@ export default function App() {
         />
       ) : (
         <PinchGestureHandler onGestureEvent={handlePinch}>
-
-        <Animated.View style={{ flex: 1, opacity }}>
-          {permission?.granted && (
-            <CameraView
-              style={styles.camera}
-              ref={cameraRef}
-              enableTorch={torch}
-              flash={flashMode}
-              zoom={facing === "back" ? zoom : 0}
-              responsiveOrientationWhenOrientationLocked
-              facing={facing}
-            >
-              <View
-                style={{
-                  flexDirection: "column",
-                  top: 10,
-                  gap: 10,
-                  right: 10,
-                  position: "absolute",
-                }}
-              >
-                <TouchableOpacity
-                  style={{
-                    padding: 10,
-                    borderRadius: 50,
-                    backgroundColor: "rgba(0,0,0,0.5)",
-                  }}
-                  onPress={() => setTorch((current) => !current)}
+          <Animated.View
+            style={{
+              flex: 1,
+              opacity,
+              backgroundColor: "black",
+              paddingTop: 40,
+            }}
+          >
+            {permission?.granted && (
+              <>
+                {/* )} */}
+                <CameraView
+                  style={styles.camera}
+                  ref={cameraRef}
+                  enableTorch={torch}
+                  flash={flashMode}
+                  ratio="16:9"
+                  zoom={facing === "back" ? zoom : 0}
+                  responsiveOrientationWhenOrientationLocked
+                  facing={facing}
                 >
-                  <MaterialCommunityIcons
-                    name={torch ? "flashlight" : "flashlight-off"}
-                    size={30}
-                    color="white"
-                  />
-                </TouchableOpacity>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      top: 10,
+                      gap: 10,
+                      right: 10,
+                      position: "absolute",
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={{
+                        padding: 10,
+                        borderRadius: 50,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                      }}
+                      onPress={() => setTorch((current) => !current)}
+                    >
+                      <MaterialCommunityIcons
+                        name={torch ? "flashlight" : "flashlight-off"}
+                        size={30}
+                        color="white"
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        padding: 10,
+                        borderRadius: 50,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                      }}
+                      onPress={() =>
+                        setFlashMode((current) =>
+                          current === "off" ? "on" : "off"
+                        )
+                      }
+                    >
+                      <Ionicons
+                        name={flashMode === "on" ? "flash" : "flash-off"}
+                        size={30}
+                        color="white"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {/* {facing === "front" && ( */}
+                  <TouchableOpacity
+                    onPress={previousPage}
+                    style={styles.backButton}
+                  >
+                    <Feather name="chevron-left" size={30} color="white" />
+                  </TouchableOpacity>
+                </CameraView>
                 <TouchableOpacity
-                  style={{
-                    padding: 10,
-                    borderRadius: 50,
-                    backgroundColor: "rgba(0,0,0,0.5)",
-                  }}
-                  onPress={() =>
-                    setFlashMode((current) =>
-                      current === "off" ? "on" : "off"
-                    )
-                  }
+                  style={styles.captureButton}
+                  onPress={takePicture}
                 >
-                  <Ionicons
-                    name={flashMode === "on" ? "flash" : "flash-off"}
-                    size={30}
-                    color="white"
-                  />
+                  <Ionicons name="camera" size={30} color="black" />
                 </TouchableOpacity>
-              </View>
-              {/* {facing === "front" && ( */}
-                <TouchableOpacity
-                  onPress={previousPage}
-                  style={styles.backButton}
-                >
-                  <Feather name="chevron-left" size={30} color="white" />
-                </TouchableOpacity>
-              {/* )} */}
-              <TouchableOpacity
-                style={styles.captureButton}
-                onPress={takePicture}
-              >
-                <Ionicons name="camera" size={30} color="black" />
-              </TouchableOpacity>
-            </CameraView>
-          )}
-        </Animated.View>
+              </>
+            )}
+          </Animated.View>
         </PinchGestureHandler>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -300,8 +321,8 @@ const CameraPreview = ({
         <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
           <Text>Retake</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.retakeButton} onPress={nextPage}>
-          <Text>Next</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={nextPage}>
+          <AntDesign name="right" size={20} />
         </TouchableOpacity>
       </View>
     </View>
@@ -314,18 +335,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   camera: {
-    flex: 1,
+    width: "100%",
+    aspectRatio: 9 / 16, // Adjust the aspect ratio as needed (4:3, 16:9, etc.)
+    alignSelf: "center",
+    alignContent: "center",
+    // borderRadius: 50,
   },
   previewControls: {
     position: "absolute",
-    bottom: 30,
+    bottom: 20,
     paddingHorizontal: 30,
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
   },
   retakeButton: {
-    width: 100,
+    width: 250,
     height: 40,
     borderRadius: 10,
     backgroundColor: "white",
@@ -343,12 +368,23 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
   },
+  nextButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 50,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   backButton: {
     position: "absolute",
     top: 10,
     left: 10,
     borderRadius: 50,
-    padding: 5,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
 });

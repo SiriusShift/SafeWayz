@@ -1,6 +1,12 @@
 import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import { Appbar, SegmentedButtons, useTheme } from "react-native-paper";
+import {
+  Appbar,
+  SegmentedButtons,
+  Switch,
+  TextInput,
+  useTheme,
+} from "react-native-paper";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { reportFormSchema } from "@/schema/schema";
@@ -104,6 +110,33 @@ const form = () => {
               />
             )}
           />
+        </View>
+        <View>
+          <StyledText>Number of Vehicles Involved</StyledText>
+          <Controller
+            name="vehiclesNum"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                mode="outlined"
+                value={value.toString()}
+                onChangeText={onChange}
+                placeholder="Enter number of vehicles"
+                keyboardType="numeric"
+                style={{ height: 45 }}
+              />
+            )}
+          />
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <StyledText>Injuries</StyledText>
+          <Switch />
         </View>
       </View>
     </View>
