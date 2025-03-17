@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { FAB, useTheme } from "react-native-paper";
+import { Button, FAB, Modal, Portal, useTheme } from "react-native-paper";
 import MapView, {
   Callout,
   Marker,
@@ -80,6 +80,7 @@ const Index = () => {
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
   const [mapReady, setMapReady] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   // New state for route tracking
   const [trackedRoute, setTrackedRoute] = useState([]);
@@ -163,6 +164,20 @@ const Index = () => {
         { text: "Open Settings", onPress: () => Linking.openSettings() },
       ]
     );
+  };
+
+  const snapToRoad = async () => {
+    const apiKey = "YOUR_GOOGLE_MAPS_API_KEY";
+    const url = `https://roads.googleapis.com/v1/nearestRoads?points=${location.lat},${location.lng}&key=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.snappedPoints) {
+      router.push("/(auth)/(reports)");
+    } else {
+      console.log("Not on a road");
+      setVisible(true);
+    }
   };
 
   const startLocationUpdates = async () => {
@@ -600,7 +615,7 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={() => router.push("/(reports)")}
+          onPress={() => router.push("/(auth)/(reports)")}
         />
 
         <BottomSheet
@@ -626,6 +641,27 @@ const Index = () => {
             </BottomSheetScrollView>
           </BottomSheetView>
         </BottomSheet>
+
+        <Portal>
+          <Modal
+            visible={visible}
+            onDismiss={() => setVisible(false)}
+            contentContainerStyle={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <StyledText className="text-2xl font-bold mb-4">
+                No Road Found
+              </StyledText>
+              <StyledText className="text-base mb-4">
+                We couldn't detect a nearby road. Please check your location or
+                try again.
+              </StyledText>
+              <Button mode="contained" onPress={() => setVisible(false)}>
+                <Text>Close</Text>
+              </Button>
+            </View>
+          </Modal>
+        </Portal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -668,6 +704,21 @@ const styles = StyleSheet.create({
     height: 50,
     marginVertical: 5,
     paddingHorizontal: 20,
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    marginHorizontal: 20,
+    borderRadius: 10,
+  },
+  modalContent: {
+    alignItems: "center",
+  },
+  modalButton: {
+    marginTop: 10,
+    backgroundColor: "black",
+    padding: 10,
+    borderRadius: 5,
   },
 });
 

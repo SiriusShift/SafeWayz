@@ -14,8 +14,22 @@ const images = {
 };
 
 const vehicleType = [
-  { id: 1, name: "Private", activeImg: "car", notActive: "carInactive", mode: "DRIVE", description: "For cars with no special restrictions" },
-  { id: 2, name: "Public", activeImg: "motor", notActive: "motorInactive", mode: "TWO_WHEELER", description: "Get great routes for motorcycles" },
+  {
+    id: 1,
+    name: "Vehicle",
+    activeImg: "car",
+    notActive: "carInactive",
+    mode: "DRIVE",
+    description: "For cars with no special restrictions",
+  },
+  {
+    id: 2,
+    name: "Motorcycle",
+    activeImg: "motor",
+    notActive: "motorInactive",
+    mode: "TWO_WHEELER",
+    description: "Get great routes for motorcycles",
+  },
 ];
 
 const Vehicle = () => {
@@ -60,7 +74,11 @@ const Vehicle = () => {
             className="w-24 justify-center items-center rounded-l-lg"
           >
             <Image
-              source={activeVehicle?.name === item?.name ? images[item?.activeImg] : images[item?.notActive]}
+              source={
+                activeVehicle?.name === item?.name
+                  ? images[item?.activeImg]
+                  : images[item?.notActive]
+              }
               style={{ width: 48, height: 48 }}
             />
           </View>
