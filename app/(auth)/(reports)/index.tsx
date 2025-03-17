@@ -25,12 +25,22 @@ import {
   ImageBackground,
   Animated,
   Dimensions,
+  Platform,
 } from "react-native";
-import { PinchGestureHandler, State } from "react-native-gesture-handler";
-import { ActivityIndicator, useTheme } from "react-native-paper";
+import { PinchGestureHandler } from "react-native-gesture-handler";
+import {
+  ActivityIndicator,
+  Button,
+  Modal,
+  Portal,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import * as ImageManipulator from "expo-image-manipulator";
+import { StatusBar } from "expo-status-bar";
+import StyledText from "@/components/StyledText";
+import { useCreateReportMutation } from "@/features/reports/api/reportsApi";
 
 export default function App() {
   const theme = useTheme();
@@ -44,13 +54,17 @@ export default function App() {
   const [backImage, setBackImage] = useState<any>(null);
   const [zoom, setZoom] = useState<number>(0);
   const [frontImage, setFrontImage] = useState<any>(null);
-  // Define flashMode with the correct type
   const [flashMode, setFlashMode] = useState<FlashMode>("off");
   const [opacity] = useState(new Animated.Value(0));
+  const [visible, setVisible] = useState(false);
   const [imageOrientation, setImageOrientation] = useState("portrait");
 
   const cameraRef = useRef<CameraView>(null);
   const animatedZoom = useRef(new Animated.Value(zoom)).current;
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+  const [triggerReport, {isLoading}] = useCreateReportMutation();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -67,6 +81,17 @@ export default function App() {
       }).start();
     }
   }, [permission]);
+
+  useEffect(() => {
+    animatedZoom.addListener(({ value }) => {
+      // Start zoom at minimum 0 for a better experience
+      const calculatedZoom = Math.max(value - 1, 0);
+      const clampedZoom = Math.min(calculatedZoom, 1);
+      setZoom(clampedZoom);
+    });
+
+    return () => animatedZoom.removeAllListeners();
+  }, []);
 
   useEffect(() => {
     if (reportImages.backCamera) {
@@ -88,28 +113,27 @@ export default function App() {
 
   const handlePinch = Animated.event(
     [{ nativeEvent: { scale: animatedZoom } }],
-    { useNativeDriver: false } // Set to false since zoom affects the camera, not a UI element
+    { useNativeDriver: false }
   );
 
-  useEffect(() => {
-    animatedZoom.addListener(({ value }) => {
-      const clampedZoom = Math.min(Math.max(value, 0), 1); // Ensure zoom is between 0 and 1
-      setZoom(clampedZoom);
-    });
+  const submitReport = async () => {
+    try {
+      const response = await triggerReport({
+        backCamera: reportImages.backCamera.base64,
+        frontCamera: frontImage.frontCamera.base64,
+      }).unwrap();
+      dispatch(clearCamera());
+      router.push("/(auth)/(reports)/form");
+    } catch (error) { 
+      console.log(error);
+    }
+  }
 
-    return () => animatedZoom.removeAllListeners();
-  }, []);
+ 
 
   if (!permission) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "black",
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <ActivityIndicator
           animating={true}
           size="large"
@@ -118,6 +142,13 @@ export default function App() {
       </View>
     );
   }
+
+  const handleSubmit = () => {
+    if (frontImage && backImage) {
+      dispatch(clearCamera());
+      router.push("/(auth)/(reports)/form");
+    }
+  };
 
   const takePicture = async () => {
     if (!cameraRef?.current) return;
@@ -130,7 +161,6 @@ export default function App() {
         skipProcessing: false,
       };
       let photo = await cameraRef.current.takePictureAsync(options);
-      console.log(photo);
 
       const isLandscape = photo.width > photo.height;
       setImageOrientation(isLandscape ? "landscape" : "portrait");
@@ -139,7 +169,7 @@ export default function App() {
       if (facing === "front") {
         photo = await ImageManipulator.manipulateAsync(photo.uri, [
           { flip: ImageManipulator.FlipType.Horizontal },
-        ]);
+        ], {base64: true});
       }
 
       if (facing === "back") {
@@ -162,16 +192,21 @@ export default function App() {
       setFacing("front");
     } else if (facing === "front") {
       dispatch(setFrontCamera(frontImage));
-      router.push("/(auth)/(reports)/form");
+      setVisible(true);
+      // router.push("/(auth)/(reports)/form");
     }
   };
 
   const previousPage = () => {
-    setPreviewVisible(true);
     if (facing === "front") {
+      setPreviewVisible(false);
       setFacing("back");
-    }
-    if (facing === "back") {
+      dispatch(setFrontCamera(null));
+      // If there's already a back image, show its preview
+      if (backImage) {
+        setPreviewVisible(true);
+      }
+    } else if (facing === "back") {
       router.push("/(auth)/(tabs)");
       dispatch(clearCamera());
     }
@@ -183,99 +218,114 @@ export default function App() {
   };
 
   return (
-    <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
-      {previewVisible && (facing === "back" ? backImage : frontImage) ? (
-        <CameraPreview
-          photo={facing === "back" ? backImage : frontImage}
-          retakePicture={retakePicture}
-          nextPage={nextPage}
-          imageOrientation={imageOrientation}
-        />
-      ) : (
-        <PinchGestureHandler onGestureEvent={handlePinch}>
-          <Animated.View
-            style={{
-              flex: 1,
-              opacity,
-              backgroundColor: "black",
-              paddingTop: 40,
-            }}
-          >
-            {permission?.granted && (
-              <>
-                {/* )} */}
-                <CameraView
-                  style={styles.camera}
-                  ref={cameraRef}
-                  enableTorch={torch}
-                  flash={flashMode}
-                  ratio="16:9"
-                  zoom={facing === "back" ? zoom : 0}
-                  responsiveOrientationWhenOrientationLocked
-                  facing={facing}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      top: 10,
-                      gap: 10,
-                      right: 10,
-                      position: "absolute",
-                    }}
+    <SafeAreaView style={styles.container}>
+      <>
+        {previewVisible && (facing === "back" ? backImage : frontImage) ? (
+          <CameraPreview
+            photo={facing === "back" ? backImage : frontImage}
+            retakePicture={retakePicture}
+            nextPage={nextPage}
+            imageOrientation={imageOrientation}
+          />
+        ) : (
+          <PinchGestureHandler onGestureEvent={handlePinch}>
+            <Animated.View style={[styles.cameraWrapper, { opacity }]}>
+              {permission?.granted && (
+                <>
+                  <CameraView
+                    style={styles.camera}
+                    ref={cameraRef}
+                    enableTorch={torch}
+                    flash={flashMode}
+                    ratio="16:9"
+                    zoom={facing === "back" ? zoom : 0}
+                    responsiveOrientationWhenOrientationLocked
+                    facing={facing}
                   >
+                    <View style={styles.topControlsContainer}>
+                      <TouchableOpacity
+                        onPress={previousPage}
+                        style={styles.backButton}
+                      >
+                        <Feather name="chevron-left" size={30} color="white" />
+                      </TouchableOpacity>
+
+                      <View style={styles.rightControls}>
+                        <TouchableOpacity
+                          style={styles.controlButton}
+                          onPress={() => setTorch((current) => !current)}
+                        >
+                          <MaterialCommunityIcons
+                            name={torch ? "flashlight" : "flashlight-off"}
+                            size={30}
+                            color="white"
+                          />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.controlButton}
+                          onPress={() =>
+                            setFlashMode((current) =>
+                              current === "off" ? "on" : "off"
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name={flashMode === "on" ? "flash" : "flash-off"}
+                            size={30}
+                            color="white"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </CameraView>
+
+                  <View style={styles.bottomControls}>
                     <TouchableOpacity
-                      style={{
-                        padding: 10,
-                        borderRadius: 50,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                      }}
-                      onPress={() => setTorch((current) => !current)}
+                      style={styles.captureButton}
+                      onPress={takePicture}
                     >
-                      <MaterialCommunityIcons
-                        name={torch ? "flashlight" : "flashlight-off"}
-                        size={30}
-                        color="white"
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{
-                        padding: 10,
-                        borderRadius: 50,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                      }}
-                      onPress={() =>
-                        setFlashMode((current) =>
-                          current === "off" ? "on" : "off"
-                        )
-                      }
-                    >
-                      <Ionicons
-                        name={flashMode === "on" ? "flash" : "flash-off"}
-                        size={30}
-                        color="white"
-                      />
+                      <Ionicons name="camera" size={30} color="black" />
                     </TouchableOpacity>
                   </View>
-                  {/* {facing === "front" && ( */}
-                  <TouchableOpacity
-                    onPress={previousPage}
-                    style={styles.backButton}
-                  >
-                    <Feather name="chevron-left" size={30} color="white" />
-                  </TouchableOpacity>
-                </CameraView>
-                <TouchableOpacity
-                  style={styles.captureButton}
-                  onPress={takePicture}
+                </>
+              )}
+            </Animated.View>
+          </PinchGestureHandler>
+        )}
+        <Portal>
+          <Modal
+            visible={visible}
+            onDismiss={() => setVisible(false)}
+            contentContainerStyle={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <StyledText className="text-2xl font-bold mb-4 text-center">
+                Submit Report
+              </StyledText>
+              <StyledText className="text-base mb-6 text-center">
+                Would you like to submit the report or continue filling out the
+                form?
+              </StyledText>
+              <View className="flex flex-row justify-center gap-4 px-4">
+                <Button mode="outlined" loading={isLoading} onPress={submitReport}>
+                  <StyledText>Submit</StyledText>
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    setVisible(false);
+                    router.push("/(auth)/(reports)/form");
+                  }}
                 >
-                  <Ionicons name="camera" size={30} color="black" />
-                </TouchableOpacity>
-              </>
-            )}
-          </Animated.View>
-        </PinchGestureHandler>
-      )}
-    </View>
+                  <Text className="text-white">Continue</Text>
+                </Button>
+              </View>
+            </View>
+          </Modal>
+        </Portal>
+      </>
+    </SafeAreaView>
   );
 }
 
@@ -285,43 +335,56 @@ const CameraPreview = ({
   nextPage,
   imageOrientation,
 }: any) => {
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = Dimensions.get("window").height;
+  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-  // Calculate container styles based on orientation
-  const containerStyle = {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "white",
-  };
+  // Calculate image display dimensions based on photo aspect ratio and screen size
+  let imageStyle = {};
 
-  // Calculate image styles based on orientation
-  const imageStyle =
-    imageOrientation === "landscape"
-      ? {
-          width: screenWidth,
-          height: screenWidth * (photo.height / photo.width),
-          alignSelf: "center",
-        }
-      : {
-          width: screenWidth,
+  if (photo && photo.width && photo.height) {
+    const photoRatio = photo.width / photo.height;
+
+    if (imageOrientation === "landscape") {
+      // For landscape photos
+      const displayHeight = screenWidth / photoRatio;
+      imageStyle = {
+        width: screenWidth,
+        height: displayHeight,
+      };
+    } else {
+      // For portrait photos
+      // Use screen height as base but ensure it's not wider than screen
+      const potentialWidth = screenHeight * photoRatio;
+
+      if (potentialWidth <= screenWidth) {
+        imageStyle = {
+          width: potentialWidth,
           height: screenHeight,
         };
+      } else {
+        // If width would exceed screen, constrain to screen width
+        imageStyle = {
+          width: screenWidth,
+          height: screenWidth / photoRatio,
+        };
+      }
+    }
+  }
 
   return (
-    <View style={containerStyle}>
+    <View style={styles.previewContainer}>
       <ImageBackground
         source={{ uri: photo?.uri }}
-        style={imageStyle}
-        resizeMode="cover"
+        style={[styles.previewImage, imageStyle]}
+        resizeMode="contain"
       />
+
       <View style={styles.previewControls}>
         <TouchableOpacity style={styles.retakeButton} onPress={retakePicture}>
-          <Text>Retake</Text>
+          <Text style={styles.buttonText}>Retake</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.nextButton} onPress={nextPage}>
-          <AntDesign name="right" size={20} />
+          <AntDesign name="right" size={20} color="black" />
         </TouchableOpacity>
       </View>
     </View>
@@ -331,28 +394,53 @@ const CameraPreview = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "black",
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+  cameraWrapper: {
+    flex: 1,
+    backgroundColor: "black",
   },
   camera: {
+    flex: 1,
     width: "100%",
-    aspectRatio: 9 / 16, // Adjust the aspect ratio as needed (4:3, 16:9, etc.)
-    alignSelf: "center",
-    alignContent: "center",
-    // borderRadius: 50,
+    height: "100%",
   },
-  previewControls: {
-    position: "absolute",
-    bottom: 20,
-    paddingHorizontal: 30,
+  topControlsContainer: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     width: "100%",
+    paddingTop: Platform.OS === "ios" ? 0 : 10,
+    paddingHorizontal: 10,
   },
-  retakeButton: {
-    width: 250,
+  rightControls: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  controlButton: {
+    padding: 5,
+    borderRadius: 50,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  backButton: {
+    borderRadius: 50,
+    width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: "white",
+    alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  bottomControls: {
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
     alignItems: "center",
   },
   captureButton: {
@@ -361,28 +449,75 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     backgroundColor: "white",
     justifyContent: "center",
-    position: "absolute",
-    bottom: 30,
-    alignSelf: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+  previewImage: {
+    alignSelf: "center",
+  },
+  previewControls: {
+    position: "absolute",
+    bottom: 10,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 30,
+  },
+  retakeButton: {
+    width: 250,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonText: {
+    fontWeight: "500",
+    color: "black",
   },
   nextButton: {
     width: 40,
     height: 40,
-    borderRadius: 50,
+    borderRadius: 20,
     backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  backButton: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    borderRadius: 50,
-    width: 40,
-    height: 40,
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    marginHorizontal: 20,
+    borderRadius: 10,
+  },
+  modalContent: {
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalButton: {
+    marginTop: 10,
+    backgroundColor: "black",
+    padding: 10,
+    borderRadius: 5,
   },
 });
