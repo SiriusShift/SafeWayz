@@ -1,7 +1,6 @@
 import {api} from "@/features/api"
-import { create } from "react-test-renderer";
 
-const reportsApi = api.injectEndpoints({
+const reportsApi = api.enhanceEndpoints({addTagTypes: ['Report']}).injectEndpoints({
     endpoints: (builder) => ({
         createReport: builder.mutation({
             query: (body) => ({
@@ -9,8 +8,16 @@ const reportsApi = api.injectEndpoints({
                 method: "POST",
                 body,
             }),
+            invalidatesTags: ['Report'],
+        }),
+        getReports: builder.query({
+            query: () => ({
+                url: "/reports/getReports",
+                method: "GET",
+            }),
+            providesTags: ['Report'],
         })
     }),
 });
 
-export const {useCreateReportMutation} = reportsApi
+export const {useCreateReportMutation, useGetReportsQuery} = reportsApi

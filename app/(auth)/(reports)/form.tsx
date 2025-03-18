@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Keyboard, TouchableWithoutFeedback } from "react-native";
 import React from "react";
 import {
   Appbar,
@@ -14,12 +14,16 @@ import { reportFormSchema } from "@/schema/schema";
 import { yupResolver } from "@hookform/resolvers/yup";
 import StyledText from "@/components/StyledText";
 import { AutocompleteDropdown } from "react-native-autocomplete-dropdown";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useCreateReportMutation } from "@/features/reports/api/reportsApi";
+import { clearCamera } from "@/features/reports/reducers/reportsSlice";
 
 const ReportForm = () => {
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch();
   const reportImages = useSelector((state: any) => state.reports);
+  const location = useSelector((state: any) => state.user.location);
   const {
     control,
     handleSubmit,
@@ -30,191 +34,216 @@ const ReportForm = () => {
     resolver: yupResolver(reportFormSchema.schema),
     defaultValues: reportFormSchema.defaultValues,
   });
-  console.log(reportImages)
+
+  const [triggerReport, { isLoading }] = useCreateReportMutation();
 
   console.log(watch());
-  const onSubmit = (data: Object) => {
-    console.log(data);
-  }
+const onSubmit = async (data: Object) => {
+  console.log(data)
+    const transformImage = {
+      ...data,
+      backImage: reportImages.backCamera.base64,
+      frontImage: reportImages.frontCamera.base64,
+      lat: location.latitude,
+      lng: location.longitude,
+    }
+    console.log("submit report",transformImage)
+    try {
+      await triggerReport(transformImage).unwrap();
+      dispatch(clearCamera());
+      router.push("/(auth)/(tabs)");
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Appbar.Header
-        style={{ backgroundColor: theme?.dark ? "#000" : "#fff" }}
-        className="flex justify-between"
-      >
-        <Appbar.BackAction
-          onPress={() => router.replace("/(auth)/(reports)")}
-        />
-        <Appbar.Content titleStyle={{ fontSize: 20 }} title="Report Form" />
-      </Appbar.Header>
-
-      <View className="flex-1 px-5 pb-16">
-        {/* Form Fields */}
-        <View className="gap-5">
-          {/* Severity Selection */}
-          <Controller
-            name="severity"
-            control={control}
-            render={({ field: { onChange, value } }) => (
-              <SegmentedButtons
-                value={value}
-                onValueChange={onChange}
-                buttons={[
-                  {
-                    label: "Low",
-                    value: "low",
-                    style:
-                      value === "low"
-                        ? { backgroundColor: theme.colors.primary }
-                        : {},
-                    labelStyle: value === "low" ? { color: "white" } : {},
-                  },
-                  {
-                    label: "Medium",
-                    value: "medium",
-                    style:
-                      value === "medium"
-                        ? { backgroundColor: theme.colors.primary }
-                        : {},
-                    labelStyle: value === "medium" ? { color: "white" } : {},
-                  },
-                  {
-                    label: "High",
-                    value: "high",
-                    style:
-                      value === "high"
-                        ? { backgroundColor: theme.colors.primary }
-                        : {},
-                    labelStyle: value === "high" ? { color: "white" } : {},
-                  },
-                ]}
-              />
-            )}
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <Appbar.Header
+          style={{ backgroundColor: theme?.dark ? "#000" : "#fff" }}
+          className="flex justify-between"
+        >
+          <Appbar.BackAction
+            onPress={() => router.replace("/(auth)/(reports)")}
           />
+          <Appbar.Content titleStyle={{ fontSize: 20 }} title="Report Form" />
+        </Appbar.Header>
 
-          {/* Accident Type Selection */}
-          <View>
-            <StyledText>Accident Type</StyledText>
+        <View className="flex-1 px-5 pb-16">
+          {/* Form Fields */}
+          <View className="gap-5">
+            {/* Severity Selection */}
             <Controller
-              name="type"
+              name="severity"
               control={control}
               render={({ field: { onChange, value } }) => (
-                <AutocompleteDropdown
-                  clearOnFocus={false}
-                  closeOnBlur={true}
-                  closeOnSubmit={false}
-                  inputContainerStyle={{
-                    backgroundColor: theme.colors.background,
-                    borderWidth: 0.5,
-                    borderColor: theme.colors.onSurface,
-                  }}
-                  initialValue={{ id: value, title: value }}
-                  dataSet={[
-                    { id: "1", title: "Collision" },
-                    { id: "2", title: "Hit and run" },
-                    { id: "3", title: "Overturned vehicle" },
-                    { id: "4", title: "Road obstruction" },
-                    { id: "5", title: "Other" },
+                <SegmentedButtons
+                  value={value}
+                  onValueChange={onChange}
+                  buttons={[
+                    {
+                      label: "Low",
+                      value: "low",
+                      style:
+                        value === "low"
+                          ? { backgroundColor: theme.colors.primary }
+                          : {},
+                      labelStyle: value === "low" ? { color: "white" } : {},
+                    },
+                    {
+                      label: "Medium",
+                      value: "medium",
+                      style:
+                        value === "medium"
+                          ? { backgroundColor: theme.colors.primary }
+                          : {},
+                      labelStyle: value === "medium" ? { color: "white" } : {},
+                    },
+                    {
+                      label: "High",
+                      value: "high",
+                      style:
+                        value === "high"
+                          ? { backgroundColor: theme.colors.primary }
+                          : {},
+                      labelStyle: value === "high" ? { color: "white" } : {},
+                    },
                   ]}
-                  textInputProps={{ placeholder: "Select type" }}
-                  onSelectItem={(item) => {
-                    onChange(item?.title || "");
-                  }}
                 />
               )}
             />
-          </View>
 
-          {watch().type === "Other" && (
+            {/* Accident Type Selection */}
             <View>
-              <StyledText>Other Accident Type</StyledText>
+              <StyledText>Accident Type</StyledText>
               <Controller
-                name="otherType"
+                name="type"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <AutocompleteDropdown
+                    clearOnFocus={false}
+                    closeOnBlur={true}
+                    closeOnSubmit={false}
+                    inputContainerStyle={{
+                      backgroundColor: theme.colors.background,
+                      borderWidth: 0.5,
+                      borderColor: theme.colors.onSurface,
+                    }}
+                    initialValue={{ id: value, title: value }}
+                    dataSet={[
+                      { id: "1", title: "Collision" },
+                      { id: "2", title: "Hit and run" },
+                      { id: "3", title: "Overturned vehicle" },
+                      { id: "4", title: "Road obstruction" },
+                      { id: "5", title: "Other" },
+                    ]}
+                    textInputProps={{ placeholder: "Select type" }}
+                    onSelectItem={(item) => {
+                      onChange(item?.title || "");
+                    }}
+                  />
+                )}
+              />
+            </View>
+
+            {watch().type === "Other" && (
+              <View>
+                <StyledText>Other Accident Type</StyledText>
+                <Controller
+                  name="otherType"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      mode="outlined"
+                      value={value}
+                      onChangeText={onChange}
+                      placeholder="Enter other accident type"
+                      style={{ height: 45 }}
+                    />
+                  )}
+                />
+              </View>
+            )}
+
+            {/* Number of Vehicles Involved */}
+            <View>
+              <StyledText>Number of Vehicles Involved</StyledText>
+              <Controller
+                name="vehiclesNum"
                 control={control}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
                     mode="outlined"
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Enter other accident type"
+                    value={value ? value.toString() : ""}
+                    onChangeText={(text) =>
+                      onChange(text.replace(/[^0-9]/g, ""))
+                    }
+                    placeholder="Enter number of vehicles"
+                    keyboardType="numeric"
                     style={{ height: 45 }}
                   />
                 )}
               />
             </View>
-          )}
-
-          {/* Number of Vehicles Involved */}
-          <View>
-            <StyledText>Number of Vehicles Involved</StyledText>
-            <Controller
-              name="vehiclesNum"
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  mode="outlined"
-                  value={value ? value.toString() : ""}
-                  onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ""))}
-                  placeholder="Enter number of vehicles"
-                  keyboardType="numeric"
-                  style={{ height: 45 }}
-                />
-              )}
-            />
-          </View>
-          <View>
-            <StyledText>Description</StyledText>
-            <Controller
-              name="description"
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  mode="outlined"
-                  numberOfLines={10}
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="Enter description"
-                  multiline
-                  style={{ height: 200, textAlignVertical: "top" }}
-                />
-              )}
-            />
-          </View>
-
-          {/* Injuries & Reported Toggles */}
-          <View className="flex flex-row justify-between">
-            <View className="flex flex-row items-center">
-              <StyledText>Injuries</StyledText>
+            <View>
+              <StyledText>Description</StyledText>
               <Controller
-                name="injuries"
+                name="description"
                 control={control}
                 render={({ field: { onChange, value } }) => (
-                  <Switch value={value || false} onValueChange={onChange} />
+                  <TextInput
+                    mode="outlined"
+                    numberOfLines={10}
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Enter description"
+                    multiline
+                    style={{ height: 200, textAlignVertical: "top" }}
+                  />
                 )}
               />
             </View>
-            <View className="flex flex-row items-center">
-              <StyledText>Reported</StyledText>
-              <Controller
-                name="notified"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Switch value={value || false} onValueChange={onChange} />
-                )}
-              />
+
+            {/* Injuries & Reported Toggles */}
+            <View className="flex flex-row justify-between">
+              <View className="flex flex-row items-center">
+                <StyledText>Injuries</StyledText>
+                <Controller
+                  name="injuries"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <Switch value={value || false} onValueChange={onChange} />
+                  )}
+                />
+              </View>
+              <View className="flex flex-row items-center">
+                <StyledText>Reported</StyledText>
+                <Controller
+                  name="notified"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <Switch value={value || false} onValueChange={onChange} />
+                  )}
+                />
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* Sticky Submit Button */}
-      <View style={styles.submitContainer}>
-        <Button mode="contained" disabled={!isValid} onPress={handleSubmit(onSubmit)}>
-          Submit
-        </Button>
+        {/* Sticky Submit Button */}
+        <View style={styles.submitContainer}>
+          <Button
+            mode="contained"
+            disabled={!isValid || isLoading}
+            loading={isLoading}
+            onPress={handleSubmit(onSubmit)}
+          >
+            {isLoading ? null : "Submit"}
+          </Button>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

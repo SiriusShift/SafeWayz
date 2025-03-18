@@ -47,6 +47,7 @@ export default function App() {
   const router = useRouter();
   const dispatch = useDispatch();
   const reportImages = useSelector((state: any) => state.reports);
+  const location = useSelector((state: any) => state.user.location);
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -64,7 +65,7 @@ export default function App() {
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-  const [triggerReport, {isLoading}] = useCreateReportMutation();
+  const [triggerReport, { isLoading }] = useCreateReportMutation();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -117,19 +118,23 @@ export default function App() {
   );
 
   const submitReport = async () => {
+    const transformImage = {
+      backImage: reportImages.backCamera.base64,
+      frontImage: reportImages.frontCamera.base64,
+      lat: location.latitude,
+      lng: location.longitude,
+      date: new Date(),
+    }
+    console.log("submit report",transformImage)
     try {
-      const response = await triggerReport({
-        backCamera: reportImages.backCamera.base64,
-        frontCamera: frontImage.frontCamera.base64,
-      }).unwrap();
+      await triggerReport(transformImage).unwrap();
       dispatch(clearCamera());
-      router.push("/(auth)/(reports)/form");
-    } catch (error) { 
+      router.push("/(auth)/(tabs)");
+      setVisible(false);
+    } catch (error) {
       console.log(error);
     }
-  }
-
- 
+  };
 
   if (!permission) {
     return (
@@ -167,9 +172,11 @@ export default function App() {
 
       // Mirror the image if using front camera
       if (facing === "front") {
-        photo = await ImageManipulator.manipulateAsync(photo.uri, [
-          { flip: ImageManipulator.FlipType.Horizontal },
-        ], {base64: true});
+        photo = await ImageManipulator.manipulateAsync(
+          photo.uri,
+          [{ flip: ImageManipulator.FlipType.Horizontal }],
+          { base64: true }
+        );
       }
 
       if (facing === "back") {
@@ -298,6 +305,7 @@ export default function App() {
             visible={visible}
             onDismiss={() => setVisible(false)}
             contentContainerStyle={styles.modalContainer}
+            dismissable={false}
           >
             <View style={styles.modalContent}>
               <StyledText className="text-2xl font-bold mb-4 text-center">
@@ -308,11 +316,17 @@ export default function App() {
                 form?
               </StyledText>
               <View className="flex flex-row justify-center gap-4 px-4">
-                <Button mode="outlined" loading={isLoading} onPress={submitReport}>
-                  <StyledText>Submit</StyledText>
+                <Button
+                  mode="outlined"
+                  loading={isLoading}
+                  disabled={isLoading}
+                  onPress={submitReport}
+                >
+                  <StyledText>{isLoading ? "" : "Submit"}</StyledText>
                 </Button>
                 <Button
                   mode="contained"
+                  disabled={isLoading}
                   onPress={() => {
                     setVisible(false);
                     router.push("/(auth)/(reports)/form");

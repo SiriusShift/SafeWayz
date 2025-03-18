@@ -30,6 +30,10 @@ import BottomSheet, {
 import StyledText from "@/components/StyledText";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
+import { setUserLocation } from "@/features/authentication/reducers/loginSlice";
+import { useDispatch } from "react-redux";
+import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
+import {io} from "socket.io-client";
 
 // Helper function to calculate distance between two points
 const calculateDistance = (point1, point2) => {
@@ -68,9 +72,12 @@ const images = {
   motor: require("@/assets/images/motorbike.png"),
 };
 
+const socket = io(process.env.EXPO_PUBLIC_BASE_URL);
+
 const Index = () => {
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch();
   const type = SecureStore.getItem("vehicleType");
   const [vehicleType, setVehicleType] = useState(null);
   const { showSnackbar } = useSnackbar();
@@ -95,6 +102,10 @@ const Index = () => {
   // Define mapStyle outside of render and keep it consistent
   const mapStyle = theme.dark ? nightMode : [];
 
+  //
+  const {data, isLoading, refetch} = useGetReportsQuery();
+  console.log(data);
+
   useEffect(() => {
     startLocationUpdates();
     return () => {
@@ -103,6 +114,17 @@ const Index = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    socket.on("new_report", (newReport) => {
+      console.log("New report received: ", newReport)
+      showSnackbar("New accident report", 3000, "success");
+      refetch();
+    })
+    return () => {
+      socket.off("new_report");
+    };
+  }, [refetch])
 
   useEffect(() => {
     const fetchVehicleType = async () => {
@@ -202,6 +224,8 @@ const Index = () => {
           };
 
           setLocation(userLocation);
+          dispatch(setUserLocation(userLocation));
+
 
           if (mapReady && mapRef.current) {
             mapRef.current.animateToRegion(
