@@ -124,8 +124,8 @@ export default function App() {
       lat: location.latitude,
       lng: location.longitude,
       date: new Date(),
-    }
-    console.log("submit report",transformImage)
+    };
+    console.log("submit report", transformImage);
     try {
       await triggerReport(transformImage).unwrap();
       dispatch(clearCamera());
@@ -308,13 +308,13 @@ export default function App() {
             dismissable={false}
           >
             <View style={styles.modalContent}>
-              <StyledText className="text-2xl font-bold mb-4 text-center">
+              <Text className="text-2xl font-bold mb-4 text-center">
                 Submit Report
-              </StyledText>
-              <StyledText className="text-base mb-6 text-center">
+              </Text>
+              <Text className="text-base mb-6 text-center">
                 Would you like to submit the report or continue filling out the
                 form?
-              </StyledText>
+              </Text>
               <View className="flex flex-row justify-center gap-4 px-4">
                 <Button
                   mode="outlined"
@@ -322,7 +322,9 @@ export default function App() {
                   disabled={isLoading}
                   onPress={submitReport}
                 >
-                  <StyledText>{isLoading ? "" : "Submit"}</StyledText>
+                  <Text className="text-black">
+                    {isLoading ? "" : "Submit"}
+                  </Text>
                 </Button>
                 <Button
                   mode="contained"
@@ -332,7 +334,7 @@ export default function App() {
                     router.push("/(auth)/(reports)/form");
                   }}
                 >
-                  <Text className="text-white">Continue</Text>
+                  Continue
                 </Button>
               </View>
             </View>
@@ -387,7 +389,7 @@ const CameraPreview = ({
   return (
     <View style={styles.previewContainer}>
       <ImageBackground
-        source={{ uri: photo?.uri }}
+        source={{ uri: typeof photo?.uri === "string" ? photo.uri : "" }}
         style={[styles.previewImage, imageStyle]}
         resizeMode="contain"
       />

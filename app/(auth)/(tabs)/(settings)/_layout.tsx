@@ -11,6 +11,7 @@ import { useAuth } from "@/context/authContext";
 const routeTitles = {
   index: "Settings",
   vehicle: "Vehicle Type",
+  profile: "Edit Profile",
 };
 
 const SettingsLayout = () => {
@@ -22,6 +23,7 @@ const SettingsLayout = () => {
   const theme = useTheme();
   const [title, setTitle] = useState("Settings");
 
+  console.log(segments);
   const handleLogout = async () => {
     try {
       await logoutTrigger().unwrap();

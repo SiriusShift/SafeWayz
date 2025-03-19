@@ -80,3 +80,18 @@ export const reportFormSchema = {
     notified: false
   }
 }
+
+export const profileFormSchema = {
+  schema: yup.object().shape({
+    fullname: yup.string().required("Full name is required"),
+    profile: yup.string().required("Profile is required"),
+    username: yup.string().required("Username is required"),
+    email: yup.string().email("Email is invalid").required("Email is required"),
+  }),
+  defaultValues: {
+    fullname: "",
+    profile: "",
+    username: "",
+    email: "",
+  }
+}

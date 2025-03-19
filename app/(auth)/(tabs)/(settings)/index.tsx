@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const Index = () => {
   const { user } = useAuth();
-  console.log("user: ",user);
+  console.log("user: ", user);
   const theme = useTheme();
   const router = useRouter();
 
@@ -21,37 +21,38 @@ const Index = () => {
         style={{ flex: 1, backgroundColor: theme.colors.background, gap: 10 }}
         className="flex flex-col pt-0 pb-10"
       >
-        <View style={{ padding: 20, paddingBottom: 0 }}>
-          <View
-            style={[
-              {
-                backgroundColor: theme?.dark ? "#222" : "#fff",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 3.84,
-                elevation: 3,
-                borderRadius: 10,
-              },
-            ]}
-            className="flex flex-row p-4 rounded-lg w-full gap-5"
-          >
-            <Image source={defaultImage} className="w-14 h-14 rounded-full" />
-            <View className="flex-col justify-center">
-              <StyledText className="text-xl text-center font-bold">
+        <View style={{ paddingHorizontal: 20, paddingBottom: 0 }}>
+          <View className="flex flex-col items-center p-4 rounded-lg w-full">
+            <Image
+              source={
+                user?.profileImg ? { uri: user.profileImg } : defaultImage
+              }
+              className="w-20 h-20 rounded-full"
+            />
+            <View className="flex-col items-center mt-3 mb-5">
+              <StyledText className="text-2xl font-bold">
                 {user?.name}
               </StyledText>
-              <Text className="text-gray-500 text-xs">{user?.email}</Text>
+              <Text className="font-medium text-sm text-gray-400">
+                {user?.email}
+              </Text>
             </View>
+            <Button
+              onPress={() => router.push("/(auth)/(tabs)/(settings)/profile")}
+              mode="contained"
+              labelStyle={{ fontSize: 12 }}
+            >
+              <Text className="text-white">Edit Profile</Text>
+            </Button>
           </View>
         </View>
         <List.Section>
-          <List.Subheader style={{ paddingHorizontal: 20, paddingVertical: 5 }}>
-            Settings
+          <List.Subheader style={{ paddingHorizontal: 20 }}>
+            Driving Preferences
           </List.Subheader>
           <List.Item
             title="Vehicle Type"
-            style={{ paddingHorizontal: 20, paddingVertical: 10 }}
+            style={{ paddingHorizontal: 20 }}
             onPress={() => router.push("/(auth)/(tabs)/(settings)/vehicle")}
             left={() => (
               <List.Icon

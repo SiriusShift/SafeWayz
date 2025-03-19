@@ -130,6 +130,7 @@ const onSubmit = async (data: Object) => {
                       borderWidth: 0.5,
                       borderColor: theme.colors.onSurface,
                     }}
+                    place
                     initialValue={{ id: value, title: value }}
                     dataSet={[
                       { id: "1", title: "Collision" },
@@ -138,7 +139,7 @@ const onSubmit = async (data: Object) => {
                       { id: "4", title: "Road obstruction" },
                       { id: "5", title: "Other" },
                     ]}
-                    textInputProps={{ placeholder: "Select type" }}
+                    textInputProps={{ placeholder: "Select type", placeholderTextColor: theme.colors.onSurfaceVariant }}
                     onSelectItem={(item) => {
                       onChange(item?.title || "");
                     }}
@@ -232,7 +233,7 @@ const onSubmit = async (data: Object) => {
         </View>
 
         {/* Sticky Submit Button */}
-        <View style={styles.submitContainer}>
+        <View style={[styles.submitContainer, { backgroundColor: theme.dark ? "#000" : "#fff"}]}>
           <Button
             mode="contained"
             disabled={!isValid || isLoading}
@@ -254,7 +255,6 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: "white",
     borderTopWidth: 1,
     borderColor: "#ddd",
   },

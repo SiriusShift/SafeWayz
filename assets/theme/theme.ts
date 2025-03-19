@@ -6,8 +6,8 @@ const lightTheme = {
     ...MD3LightTheme.colors,
     primary: "#c22727",
     background: "#FFFFFF",
-    onSurface: "#000000", // Text color for light mode
-    onPrimary: "#FFFFFF", // Text color for primary-colored buttons
+    // onSurface: "#000000", // Text color for light mode
+    // onPrimary: "#FFFFFF", // Text color for primary-colored buttons
   },
 };
 
@@ -15,9 +15,9 @@ const darkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: "#c22727",
+    primary: "#FA2E2E",
     background: "#000000",
-    onSurface: "#FFFFFF", // Text color for dark mode
+    // onSurface: "#FFFFFF", // Text color for dark mode
     onPrimary: "#FFFFFF",
   },
 };

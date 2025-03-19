@@ -33,7 +33,8 @@ import { useRouter } from "expo-router";
 import { setUserLocation } from "@/features/authentication/reducers/loginSlice";
 import { useDispatch } from "react-redux";
 import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
-import {io} from "socket.io-client";
+import { io } from "socket.io-client";
+import DefaultAccident from "@/assets/images/accident_mark.png";
 
 // Helper function to calculate distance between two points
 const calculateDistance = (point1, point2) => {
@@ -72,6 +73,10 @@ const images = {
   motor: require("@/assets/images/motorbike.png"),
 };
 
+const reports = {
+  Collision: require("@/assets/images/collision_mark.png"),
+}
+
 const socket = io(process.env.EXPO_PUBLIC_BASE_URL);
 
 const Index = () => {
@@ -103,8 +108,8 @@ const Index = () => {
   const mapStyle = theme.dark ? nightMode : [];
 
   //
-  const {data, isLoading, refetch} = useGetReportsQuery();
-  console.log(data);
+  const { data, isLoading, refetch } = useGetReportsQuery();
+  console.log("reports", data);
 
   useEffect(() => {
     startLocationUpdates();
@@ -117,14 +122,14 @@ const Index = () => {
 
   useEffect(() => {
     socket.on("new_report", (newReport) => {
-      console.log("New report received: ", newReport)
+      console.log("New report received: ", newReport);
       showSnackbar("New accident report", 3000, "success");
       refetch();
-    })
+    });
     return () => {
       socket.off("new_report");
     };
-  }, [refetch])
+  }, [refetch]);
 
   useEffect(() => {
     const fetchVehicleType = async () => {
@@ -225,7 +230,6 @@ const Index = () => {
 
           setLocation(userLocation);
           dispatch(setUserLocation(userLocation));
-
 
           if (mapReady && mapRef.current) {
             mapRef.current.animateToRegion(
@@ -438,12 +442,11 @@ const Index = () => {
           showsCompass={false}
           customMapStyle={mapStyle}
           onMapReady={() => setMapReady(true)}
-          // Apply initial map style immediately
           initialRegion={{
-            latitude: location?.latitude || 14.5995,
-            longitude: location?.longitude || 120.9842,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
+            latitude: 15.16, // Angeles City latitude
+            longitude: 120.586, // Angeles City longitude
+            latitudeDelta: 0.03,
+            longitudeDelta: 0.03,
           }}
         >
           {mapReady && location && (
@@ -506,6 +509,25 @@ const Index = () => {
                 </React.Fragment>
               );
             })}
+          {data &&
+            location &&
+            mapReady &&
+            data.map((item, index) => (
+              <Marker
+                key={index}
+                coordinate={{
+                  latitude: item.latitude,
+                  longitude: item.longitude,
+                }}
+                title={item.name}
+                description={item.vicinity}
+              >
+                <Image
+                  source={!item?.type ? DefaultAccident : reports[item?.type]}
+                  style={{ width: 35, height: 35, resizeMode: "contain" }}
+                />
+              </Marker>
+            ))}
         </MapView>
 
         <GooglePlacesAutocomplete
@@ -644,7 +666,6 @@ const Index = () => {
 
         <BottomSheet
           onClose={() => handleClose}
-          enablePanDownToClose
           ref={bottomSheetRef}
           index={-1}
           backgroundStyle={{
