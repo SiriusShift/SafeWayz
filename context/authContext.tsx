@@ -30,6 +30,7 @@ export const AuthContext = createContext({
   login: () => null,
   logout: () => null,
   register: () => null,
+  updateUser: () => null
 });
 
 export const useAuth = () => {
@@ -57,7 +58,7 @@ export default function AuthProvider({ children }) {
   const register = async (values) => {
     await SecureStore.setItemAsync("accessToken", JSON.stringify(values.accessToken));
     await SecureStore.setItemAsync("user", JSON.stringify(values.user));
-    setUser(values);
+    setUser(values.user);
     return true;
   };
 
@@ -65,6 +66,12 @@ export default function AuthProvider({ children }) {
     await SecureStore.deleteItemAsync("user");
     await SecureStore.deleteItemAsync("accessToken");
     setUser(null);
+  };
+
+  const updateUser = async (values) => {
+    await SecureStore.setItemAsync("user", JSON.stringify(values.user));
+    setUser(values.user)
+    return true;
   };
 
   useEffect(() => {
@@ -82,7 +89,7 @@ export default function AuthProvider({ children }) {
   useProtectedRoute(user);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser,  loading }}>
       {children}
     </AuthContext.Provider>
   );
