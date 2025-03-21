@@ -33,6 +33,8 @@ const profile = () => {
     defaultValues: profileFormSchema.defaultValues,
   });
 
+  console.log(watch());
+
   const [updateProfile, { isLoading }] = useUpdateUserDetailsMutation();
 
   useEffect(() => {
@@ -44,8 +46,9 @@ const profile = () => {
   }, [user]);
 
   const onSubmit = async (data: any) => {
+    console.log("onSubmit!");
     try{
-      const response = await updateProfile({...data, profile: data.profile.base64}).unwrap();
+      const response = await updateProfile({...data, ...(data.profile && {profile: data.profile.base64})}).unwrap();
       showSnackbar("Profile updated successfully!", 3000, "success");
       updateUser(response);
       router.push("/(auth)/(tabs)/(settings)");
@@ -79,7 +82,7 @@ const profile = () => {
       const img = {
         uri: result.assets[0].uri,
         base64: result.assets[0].base64,
-      }
+      };
       onChange(img);
     }
   };
@@ -87,31 +90,33 @@ const profile = () => {
   return (
     <StyledView style={{ flex: 1 }}>
       <View className="w-full h-32 flex justify-center items-center">
-      <Controller
-  name="profile"
-  control={control}
-  render={({ field: { value, onChange } }) => (
-    <TouchableOpacity onPress={() => pickImage(onChange)} className="relative">
-      <Image
-        source={
-          value?.uri
-            ? { uri: value.uri } // Selected image
-            : user?.profileImg
-            ? { uri: user.profileImg } // Existing profile image
-            : defaultImage // Default image
-        }
-        className="w-20 h-20 rounded-full"
-      />
-      <View
-        className="absolute bottom-0 right-0 p-1 rounded-full"
-        style={{ backgroundColor: theme.colors.primary }}
-      >
-        <Ionicons name="pencil" size={16} color="white" />
-      </View>
-    </TouchableOpacity>
-  )}
-/>
-
+        <Controller
+          name="profile"
+          control={control}
+          render={({ field: { value, onChange } }) => (
+            <TouchableOpacity
+              onPress={() => pickImage(onChange)}
+              className="relative"
+            >
+              <Image
+                source={
+                  value?.uri
+                    ? { uri: value.uri } // Selected image
+                    : user?.profileImg
+                    ? { uri: user.profileImg } // Existing profile image
+                    : defaultImage // Default image
+                }
+                className="w-20 h-20 rounded-full"
+              />
+              <View
+                className="absolute bottom-0 right-0 p-1 rounded-full"
+                style={{ backgroundColor: theme.colors.primary }}
+              >
+                <Ionicons name="pencil" size={16} color="white" />
+              </View>
+            </TouchableOpacity>
+          )}
+        />
       </View>
       <View className="flex flex-col mx-5">
         <StyledText className="font-bold">Basic Detail</StyledText>
@@ -169,7 +174,7 @@ const profile = () => {
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             style={{ borderRadius: 5 }}
-            disabled={!isDirty || isLoading}
+            disabled={!isDirty || isLoading || !isValid}
           >
             {!isLoading && "Submit"}
           </Button>
