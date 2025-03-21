@@ -4,7 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { signUpSchema, verifyCodeSchema } from "@/schema/schema";
 import Logo from "@/assets/images/location.png";
-import { Button, TextInput } from "react-native-paper";
+import { Button, TextInput, useTheme } from "react-native-paper";
 import { Link } from "expo-router";
 import {
   usePostSignupMutation,
@@ -25,6 +25,7 @@ const SignUp = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const dispatch = useDispatch();
+  const theme = useTheme();
   const { register } = useAuth();
   const { showSnackbar } = useSnackbar();
 
@@ -110,7 +111,7 @@ const SignUp = () => {
 
   if (step === "animation") {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View className="flex-1 justify-center items-center" style={{backgroundColor: theme.colors.background}}>
         <LottieView
           source={emailAnimation}
           autoPlay

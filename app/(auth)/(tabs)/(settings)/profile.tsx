@@ -54,6 +54,7 @@ const profile = () => {
       router.push("/(auth)/(tabs)/(settings)");
     }catch(err){
       console.log(err)
+      showSnackbar("Failed to update profile", 3000, "danger");
     }
   };
 

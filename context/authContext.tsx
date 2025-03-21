@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import * as SecureStore from "expo-secure-store";
 import { SplashScreen, useRouter, useSegments } from "expo-router";
+import {
+  useGetUserDetailsQuery,
+  useLazyGetUserDetailsQuery,
+} from "@/features/user/api/userApi";
 
 function useProtectedRoute(user) {
   const segments = useSegments();
@@ -9,7 +13,7 @@ function useProtectedRoute(user) {
   useEffect(() => {
     console.log(segments);
     const inAuthGroup = segments[0] === "(auth)";
-    console.log("user: !",user, inAuthGroup);
+    console.log("user: !", user, inAuthGroup);
 
     const handleSplashScreen = async () => {
       if (!user && inAuthGroup) {
@@ -30,7 +34,7 @@ export const AuthContext = createContext({
   login: () => null,
   logout: () => null,
   register: () => null,
-  updateUser: () => null
+  updateUser: () => null,
 });
 
 export const useAuth = () => {
@@ -45,18 +49,18 @@ export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  console.log("user", user);
+  const [triggerGetUserDetails] = useLazyGetUserDetailsQuery();
 
   const login = async (values) => {
     console.log("values", values);
     await SecureStore.setItemAsync("user", JSON.stringify(values.user));
-    await SecureStore.setItemAsync("accessToken", (values.accessToken));
+    await SecureStore.setItemAsync("accessToken", values.accessToken);
     setUser(values.user);
     return true;
   };
 
   const register = async (values) => {
-    await SecureStore.setItemAsync("accessToken", JSON.stringify(values.accessToken));
+    await SecureStore.setItemAsync("accessToken", values.accessToken);
     await SecureStore.setItemAsync("user", JSON.stringify(values.user));
     setUser(values.user);
     return true;
@@ -70,26 +74,39 @@ export default function AuthProvider({ children }) {
 
   const updateUser = async (values) => {
     await SecureStore.setItemAsync("user", JSON.stringify(values.user));
-    setUser(values.user)
+    setUser(values.user);
     return true;
   };
 
   useEffect(() => {
     const loadUserFromStorage = async () => {
-      const storedUser = await SecureStore.getItemAsync("user"); // ✅ Use getItemAsync
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      try {
+        const storedUser = await SecureStore.getItemAsync("user");
+        const storedToken = await SecureStore.getItemAsync("accessToken");
+
+        if (storedUser && storedToken) {
+          const response = await triggerGetUserDetails().unwrap();
+          setUser(response.user);
+          await SecureStore.setItemAsync("user", JSON.stringify(response.user));
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.log("Error loading user from storage:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadUserFromStorage();
-  }, []);
+  }, []); // ✅ Removed fetchUserData from dependencies
 
   useProtectedRoute(user);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateUser,  loading }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, updateUser, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );

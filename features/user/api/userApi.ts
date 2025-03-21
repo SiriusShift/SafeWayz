@@ -1,4 +1,5 @@
 import { api } from "@/features/api";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const userApi = api.enhanceEndpoints({ addTagTypes: ["User"] }).injectEndpoints({
     endpoints: (builder) => ({
@@ -9,8 +10,15 @@ const userApi = api.enhanceEndpoints({ addTagTypes: ["User"] }).injectEndpoints(
                 body,
             }),
             invalidatesTags: ["User"],
+        }),
+        getUserDetails: builder.query({
+            query: () => ({
+                url: "/getUserDetails",
+                method: "GET",
+            }),
+            providesTags: ["User"],
         })
     }),
 });
 
-export const { useUpdateUserDetailsMutation } = userApi;
+export const { useUpdateUserDetailsMutation, useLazyGetUserDetailsQuery } = userApi;

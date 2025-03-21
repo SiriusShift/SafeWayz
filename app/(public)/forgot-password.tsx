@@ -5,7 +5,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/schema/schema";
-import { Button, TextInput } from "react-native-paper";
+import { Button, TextInput, useTheme } from "react-native-paper";
 import {
   usePostResetPasswordMutation,
   usePostSendResetCodeMutation,
@@ -24,6 +24,7 @@ const ForgotPassword = () => {
   const [resendTimer, setResendTimer] = useState(0); // Timer for resend code
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
+  const theme = useTheme();
   const {
     control,
     handleSubmit,
@@ -101,7 +102,7 @@ const ForgotPassword = () => {
 
   if (step === "animation") {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View className="flex-1 justify-center items-center" style={{backgroundColor: theme.colors.background}}>
         <LottieView
           source={emailAnimation}
           autoPlay
