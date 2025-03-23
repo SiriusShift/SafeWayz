@@ -1,4 +1,10 @@
-import { View, Text, StyleSheet, Keyboard, TouchableWithoutFeedback } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from "react-native";
 import React from "react";
 import {
   Appbar,
@@ -38,16 +44,16 @@ const ReportForm = () => {
   const [triggerReport, { isLoading }] = useCreateReportMutation();
 
   console.log(watch());
-const onSubmit = async (data: Object) => {
-  console.log(data)
+  const onSubmit = async (data: Object) => {
+    console.log(data);
     const transformImage = {
       ...data,
       backImage: reportImages.backCamera.base64,
       frontImage: reportImages.frontCamera.base64,
       lat: location.latitude,
       lng: location.longitude,
-    }
-    console.log("submit report",transformImage)
+    };
+    console.log("submit report", transformImage);
     try {
       await triggerReport(transformImage).unwrap();
       dispatch(clearCamera());
@@ -117,7 +123,7 @@ const onSubmit = async (data: Object) => {
             {/* Accident Type Selection */}
             <View>
               <StyledText>Accident Type</StyledText>
-              <Controller
+              {/* <Controller
                 name="type"
                 control={control}
                 render={({ field: { onChange, value } }) => (
@@ -145,7 +151,7 @@ const onSubmit = async (data: Object) => {
                     }}
                   />
                 )}
-              />
+              /> */}
             </View>
 
             {watch().type === "Other" && (
@@ -233,7 +239,12 @@ const onSubmit = async (data: Object) => {
         </View>
 
         {/* Sticky Submit Button */}
-        <View style={[styles.submitContainer, { backgroundColor: theme.dark ? "#000" : "#fff"}]}>
+        <View
+          style={[
+            styles.submitContainer,
+            { backgroundColor: theme.dark ? "#000" : "#fff" },
+          ]}
+        >
           <Button
             mode="contained"
             disabled={!isValid || isLoading}
