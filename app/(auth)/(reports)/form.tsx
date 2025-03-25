@@ -19,10 +19,10 @@ import { Controller, useForm } from "react-hook-form";
 import { reportFormSchema } from "@/schema/schema";
 import { yupResolver } from "@hookform/resolvers/yup";
 import StyledText from "@/components/StyledText";
-import { AutocompleteDropdown } from "react-native-autocomplete-dropdown";
 import { useDispatch, useSelector } from "react-redux";
 import { useCreateReportMutation } from "@/features/reports/api/reportsApi";
 import { clearCamera } from "@/features/reports/reducers/reportsSlice";
+import { Dropdown } from "react-native-element-dropdown";
 
 const ReportForm = () => {
   const theme = useTheme();
@@ -120,34 +120,55 @@ const ReportForm = () => {
               )}
             />
 
-            {/* Accident Type Selection */}
             <View>
               <StyledText>Accident Type</StyledText>
               {/* <Controller
                 name="type"
                 control={control}
                 render={({ field: { onChange, value } }) => (
-                  <AutocompleteDropdown
-                    clearOnFocus={false}
-                    closeOnBlur={true}
-                    closeOnSubmit={false}
-                    inputContainerStyle={{
+                  <Dropdown
+                    data={[
+                      { title: "Collision" },
+                      { title: "Hit and run" },
+                      { title: "Overturned vehicle" },
+                      { title: "Road obstruction" },
+                      { title: "Other" },
+                    ]}
+                    labelField="title"
+                    valueField="title"
+                    placeholder="Select type"
+                    value={value}
+                    onChange={(item) => onChange(item.title)}
+                    style={{
                       backgroundColor: theme.colors.background,
-                      borderWidth: 0.5,
+                      borderWidth: 1,
+                      borderColor: theme.colors.onSurface,
+                      padding: 10,
+                      borderRadius: 5,
+                    }}
+                    containerStyle={{
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      borderWidth: 1,
                       borderColor: theme.colors.onSurface,
                     }}
-                    place
-                    initialValue={{ id: value, title: value }}
-                    dataSet={[
-                      { id: "1", title: "Collision" },
-                      { id: "2", title: "Hit and run" },
-                      { id: "3", title: "Overturned vehicle" },
-                      { id: "4", title: "Road obstruction" },
-                      { id: "5", title: "Other" },
-                    ]}
-                    textInputProps={{ placeholder: "Select type", placeholderTextColor: theme.colors.onSurfaceVariant }}
-                    onSelectItem={(item) => {
-                      onChange(item?.title || "");
+                    itemContainerStyle={{
+                      backgroundColor: theme.colors.background,
+                    }}
+                    itemTextStyle={{
+                      color: theme.colors.onSurface,
+                    }}
+                    placeholderStyle={{
+                      color: theme.colors.onSurfaceVariant,
+                    }}
+                    activeColor={theme.dark ? "#505050" : "#6e6e6e"}
+                    selectedTextStyle={{
+                      color: theme.colors.onSurface,
+                    }}
+                    maxHeight={220} // Ensures dropdown only shows 4 items before scrolling
+                    flatListProps={{
+                      scrollEnabled: true, // Enables scrolling if there are more than 4 items
+                      nestedScrollEnabled: true, // Ensures smooth scrolling inside dropdown
                     }}
                   />
                 )}
