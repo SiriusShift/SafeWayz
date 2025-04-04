@@ -122,7 +122,7 @@ const ReportForm = () => {
 
             <View>
               <StyledText>Accident Type</StyledText>
-              {/* <Controller
+              <Controller
                 name="type"
                 control={control}
                 render={({ field: { onChange, value } }) => (
@@ -172,7 +172,7 @@ const ReportForm = () => {
                     }}
                   />
                 )}
-              /> */}
+              />
             </View>
 
             {watch().type === "Other" && (
@@ -246,7 +246,7 @@ const ReportForm = () => {
                 />
               </View>
               <View className="flex flex-row items-center">
-                <StyledText>Reported</StyledText>
+                <StyledText>Notified</StyledText>
                 <Controller
                   name="notified"
                   control={control}

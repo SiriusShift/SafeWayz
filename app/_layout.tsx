@@ -15,10 +15,6 @@ import { SnackbarProvider } from "@/hooks/useSnackbar";
 import "react-native-get-random-values";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalProvider } from "@gorhom/portal";
-<<<<<<< Updated upstream
-// import {AutocompleteDropdownContextProvider} from 'react-native-autocomplete-dropdown';
-=======
->>>>>>> Stashed changes
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 

@@ -33,8 +33,9 @@ import { useRouter } from "expo-router";
 import { setUserLocation } from "@/features/authentication/reducers/loginSlice";
 import { useDispatch } from "react-redux";
 import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
-import { io } from "socket.io-client";
+import { socket } from "@/socket";
 import DefaultAccident from "@/assets/images/accident_mark.png";
+import DefaultNotified from "@/assets/images/accident_mark_notified.png";
 
 // Helper function to calculate distance between two points
 const calculateDistance = (point1, point2) => {
@@ -75,9 +76,13 @@ const images = {
 
 const reports = {
   Collision: require("@/assets/images/collision_mark.png"),
-}
+  "Hit and run": require("@/assets/images/hitnrun_mark.png"),
+};
 
-const socket = io(process.env.EXPO_PUBLIC_BASE_URL);
+const reports_notified = {
+  Collision: require("@/assets/images/collision_mark_notified.png"),
+  "Hit and run": require("@/assets/images/hitrun_mark_notified.png"),
+};
 
 const Index = () => {
   const theme = useTheme();
@@ -148,13 +153,49 @@ const Index = () => {
     }
   }, [searchLocation]);
 
-  // Update route tracking when route or location changes
+  // Add a new effect that specifically watches for chosen route changes
+  useEffect(() => {
+    if (
+      chosenRouteIndex !== null &&
+      routesCoordinates.length > 0 &&
+      routesCoordinates[chosenRouteIndex]?.coordinates
+    ) {
+      // When route changes, update the tracking based on current location
+      const currentRoute = routesCoordinates[chosenRouteIndex];
+
+      if (location) {
+        const { closestIndex } = findClosestPointOnRoute(
+          location,
+          currentRoute.coordinates
+        );
+
+        // Split the route into tracked and remaining segments
+        const newTrackedRoute = currentRoute.coordinates.slice(
+          0,
+          closestIndex + 1
+        );
+        const newRemainingRoute = currentRoute.coordinates.slice(
+          closestIndex + 1
+        );
+
+        setTrackedRoute(newTrackedRoute);
+        setRemainingRoute(newRemainingRoute);
+      } else {
+        // If no location yet, reset tracking
+        setTrackedRoute([]);
+        setRemainingRoute(currentRoute.coordinates);
+      }
+    }
+  }, [chosenRouteIndex, routesCoordinates]);
+
+  // Keep the existing effect for updating tracking during movement
   useEffect(() => {
     if (
       chosenRouteIndex !== null &&
       routesCoordinates.length > 0 &&
       location &&
-      routesCoordinates[chosenRouteIndex]?.coordinates
+      routesCoordinates[chosenRouteIndex]?.coordinates &&
+      trackedRoute.length > 0 // Only update if we already have a tracked route
     ) {
       const currentRoute = routesCoordinates[chosenRouteIndex];
 
@@ -176,8 +217,8 @@ const Index = () => {
       setTrackedRoute(newTrackedRoute);
       setRemainingRoute(newRemainingRoute);
     }
-  }, [location, chosenRouteIndex, routesCoordinates]);
-
+  }, [location]);
+  
   const showSettingsAlert = () => {
     Alert.alert(
       "Location Permission Required",
@@ -523,7 +564,15 @@ const Index = () => {
                 description={item.vicinity}
               >
                 <Image
-                  source={!item?.type ? DefaultAccident : reports[item?.type]}
+                  source={
+                    item.type
+                      ? item.notified
+                        ? reports_notified[item.type]
+                        : reports[item.type]
+                      : item.notified
+                      ? DefaultNotified
+                      : DefaultAccident
+                  }
                   style={{ width: 35, height: 35, resizeMode: "contain" }}
                 />
               </Marker>

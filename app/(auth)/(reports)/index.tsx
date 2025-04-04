@@ -244,7 +244,7 @@ export default function App() {
                     ref={cameraRef}
                     enableTorch={torch}
                     flash={flashMode}
-                    ratio="16:9"
+                    ratio="4:3"
                     zoom={facing === "back" ? zoom : 0}
                     responsiveOrientationWhenOrientationLocked
                     facing={facing}
