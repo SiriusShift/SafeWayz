@@ -36,6 +36,12 @@ import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
 import { socket } from "@/socket";
 import DefaultAccident from "@/assets/images/accident_mark.png";
 import DefaultNotified from "@/assets/images/accident_mark_notified.png";
+import MapboxGL from "@rnmapbox/maps";
+
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
+MapboxGL.setConnected(true);
+MapboxGL.setTelemetryEnabled(false);
+MapboxGL.setWellKnownTileServer("Mapbox");
 
 // Helper function to calculate distance between two points
 const calculateDistance = (point1, point2) => {
@@ -218,7 +224,7 @@ const Index = () => {
       setRemainingRoute(newRemainingRoute);
     }
   }, [location]);
-  
+
   const showSettingsAlert = () => {
     Alert.alert(
       "Location Permission Required",
@@ -475,109 +481,19 @@ const Index = () => {
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={[styles.container, containerBackgroundStyle]}>
-        <MapView
-          ref={mapRef}
-          provider={PROVIDER_GOOGLE}
+        <MapboxGL.MapView
           style={styles.map}
-          showsTraffic={true}
-          showsCompass={false}
-          customMapStyle={mapStyle}
-          onMapReady={() => setMapReady(true)}
-          initialRegion={{
-            latitude: 15.16, // Angeles City latitude
-            longitude: 120.586, // Angeles City longitude
-            latitudeDelta: 0.03,
-            longitudeDelta: 0.03,
-          }}
+          styleURL={
+            theme.dark
+              ? "mapbox://styles/mapbox/traffic-night-v2"
+              : "mapbox://styles/mapbox/traffic-day-v2"
+          }
+          rotateEnabled={true}
         >
-          {mapReady && location && (
-            <Marker coordinate={location} title="Your Location">
-              <Image
-                source={images[vehicleType?.activeImg || "car"]}
-                style={{ width: 30, height: 30, resizeMode: "contain" }}
-              />
-            </Marker>
-          )}
-          {mapReady && searchLocation && (
-            <Marker coordinate={searchLocation.location} />
-          )}
-          {mapReady &&
-            routesCoordinates.map((route, index) => {
-              const zIndex = isChosen
-                ? routesCoordinates.length + 1
-                : routesCoordinates.length - index;
-              const isChosen = index === chosenRouteIndex;
+          <MapboxGL.Camera zoomLevel={14} centerCoordinate={[15.16, 120.586]} pitch={60} animationMode="flyTo" animationDuration={6000} /> 
 
-              return (
-                <React.Fragment key={index}>
-                  {/* Tracked portion of the route */}
-                  <Polyline
-                    coordinates={trackedRoute}
-                    strokeColor="green"
-                    strokeWidth={6}
-                    zIndex={zIndex + 1}
-                    strokeLinecap="round"
-                    lineJoin="round"
-                  />
-
-                  {/* Remaining portion of the route */}
-                  <Polyline
-                    coordinates={remainingRoute}
-                    strokeColor={isChosen ? "blue" : "gray"}
-                    strokeWidth={4}
-                    zIndex={zIndex}
-                    strokeLinecap="round"
-                    lineJoin="round"
-                  />
-
-                  {/* Original route selection logic */}
-                  <Polyline
-                    coordinates={route.coordinates}
-                    tappable={true}
-                    onPress={(e) => {
-                      e.stopPropagation && e.stopPropagation();
-                      setChosenRouteIndex(index);
-                      if (route.onSelect) {
-                        route.onSelect(index);
-                      }
-                    }}
-                    strokeColor={isChosen ? "red" : "blue"}
-                    strokeWidth={isChosen ? 6 : 4}
-                    zIndex={zIndex}
-                    strokeLinecap="round"
-                    lineJoin="round"
-                  />
-                </React.Fragment>
-              );
-            })}
-          {data &&
-            location &&
-            mapReady &&
-            data.map((item, index) => (
-              <Marker
-                key={index}
-                coordinate={{
-                  latitude: item.latitude,
-                  longitude: item.longitude,
-                }}
-                title={item.name}
-                description={item.vicinity}
-              >
-                <Image
-                  source={
-                    item.type
-                      ? item.notified
-                        ? reports_notified[item.type]
-                        : reports[item.type]
-                      : item.notified
-                      ? DefaultNotified
-                      : DefaultAccident
-                  }
-                  style={{ width: 35, height: 35, resizeMode: "contain" }}
-                />
-              </Marker>
-            ))}
-        </MapView>
+          <MapboxGL.PointAnnotation id="marker" coordinate={[15.16, 120.586]}><View /></MapboxGL.PointAnnotation>
+        </MapboxGL.MapView>
 
         <GooglePlacesAutocomplete
           placeholder="Search"

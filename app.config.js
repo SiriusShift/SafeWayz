@@ -43,6 +43,13 @@ export default {
         },
       ],
       "expo-secure-store",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox",
+          "mapboxAccessToken": process.env.EXPO_PUBLIC_MAPBOX_SECRET
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
