@@ -85,7 +85,7 @@ const MapMarkers = ({location, mapReady, vehicleType, routesCoordinates, searchL
       {data &&
         location &&
         mapReady &&
-        data.map((item, index) => (
+        data?.data?.map((item, index) => (
           <Marker
             key={index}
             coordinate={{
