@@ -166,6 +166,7 @@ const profile = () => {
             contentStyle={{ flexDirection: "row-reverse" }}
             icon={"arrow-right"}
             mode="contained-tonal"
+            onPress={() => router.push("/(auth)/(tabs)/(settings)/security")}
             disabled={isDirty}
           >
             Change Password

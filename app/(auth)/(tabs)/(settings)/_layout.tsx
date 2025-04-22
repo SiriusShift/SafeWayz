@@ -12,6 +12,7 @@ const routeTitles = {
   index: "Settings",
   vehicle: "Vehicle Type",
   profile: "Edit Profile",
+  security: "Security",
 };
 
 const SettingsLayout = () => {
@@ -72,6 +73,8 @@ const SettingsLayout = () => {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" options={{ title: "Settings" }} />
         <Stack.Screen name="vehicle" options={{ title: "Vehicle Type" }} />
+        <Stack.Screen name="profile" options={{ title: "Edit Profile" }} />
+        <Stack.Screen name="security" options={{ title: "Change Password" }} />
       </Stack>
     </View>
   );

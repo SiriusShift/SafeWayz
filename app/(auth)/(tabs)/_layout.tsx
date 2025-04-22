@@ -111,6 +111,41 @@ const TabsLayout = () => {
         /> */}
 
         <Tabs.Screen
+          name="graph"
+          options={{
+            title: "Graphs",
+            headerShown: false,
+            tabBarIcon: ({ focused }) => (
+              <View
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 50,
+                  gap: 2,
+                }}
+              >
+                <Ionicons
+                  name={focused ? "stats-chart" : "stats-chart-outline"}
+                  size={22}
+                  className="flex items-center"
+                  color={focused ? theme.colors.onSurface : "gray"}
+                />
+
+                <Text
+                  style={{
+                    color: focused ? theme.colors.onSurface : "gray",
+                    fontSize: 10,
+                  }}
+                >
+                  Graphs
+                </Text>
+              </View>
+            ),
+          }}
+        />
+
+        <Tabs.Screen
           name="(settings)"
           options={{
             title: "Settings",
