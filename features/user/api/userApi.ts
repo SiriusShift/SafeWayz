@@ -17,8 +17,15 @@ const userApi = api.enhanceEndpoints({ addTagTypes: ["User"] }).injectEndpoints(
                 method: "GET",
             }),
             providesTags: ["User"],
+        }),
+        patchPassword: builder.mutation({
+            query: (body) => ({
+                url: "/change-password",
+                method: "PATCH",
+                body,
+            }),
         })
     }),
 });
 
-export const { useUpdateUserDetailsMutation, useLazyGetUserDetailsQuery } = userApi;
+export const { useUpdateUserDetailsMutation, useLazyGetUserDetailsQuery, usePatchPasswordMutation } = userApi;

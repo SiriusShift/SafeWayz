@@ -5,9 +5,14 @@ import StyledText from "@/components/StyledText";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { changePasswordSchema } from "@/schema/schema";
-import { Button, TextInput } from "react-native-paper";
+import { Button, TextInput, useTheme } from "react-native-paper";
+import { usePatchPasswordMutation } from "@/features/user/api/userApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
+import { useRouter } from "expo-router";
 
 const Security = () => {
+
+  //States
   const [focusedField, setFocusedField] = useState(null);
   const [visibility, setVisibility] = useState({
     oldPassword: false,
@@ -15,6 +20,13 @@ const Security = () => {
     confirmPassword: false,
   });
 
+  // HOOKS
+  const {showSnackbar} = useSnackbar();
+  const router = useRouter();
+  const theme = useTheme();
+
+
+  // React Hook Form
   const {
     control,
     handleSubmit,
@@ -25,8 +37,24 @@ const Security = () => {
     defaultValues: changePasswordSchema.defaultValues,
   });
 
-  const onSubmit = (data) => {
-    console.log("Submitted data:", data);
+  console.log(errors?.oldPassword?.message);
+
+  //RTK QUERY
+  const [triggerSubmit, {isLoading}] = usePatchPasswordMutation();
+
+  // FUNCTIONS
+  const onSubmit = async (data: Object) => {
+    try{
+      await triggerSubmit({
+        password: data?.oldPassword,
+        newPassword: data?.password
+      }).unwrap();
+      showSnackbar("Password changed successfully!", 3000, "success");
+      router.push("/(auth)/(tabs)/(settings)");
+    }catch(err){
+      console.log(err);
+      showSnackbar("Failed to change password", 3000, "danger");
+    }
   };
 
   const getRightIcon = (fieldName) =>
@@ -55,6 +83,7 @@ const Security = () => {
           control={control}
           name="oldPassword"
           render={({ field: { onChange, onBlur, value } }) => (
+            <>
             <TextInput
               label="Old Password"
               mode="outlined"
@@ -69,6 +98,12 @@ const Security = () => {
               onChangeText={onChange}
               value={value}
             />
+            {errors.oldPassword && (
+              <StyledText className="text-red-500">
+                {errors?.oldPassword?.message}
+              </StyledText>
+            )}
+            </>
           )}
         />
 
@@ -76,6 +111,7 @@ const Security = () => {
           control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
+            <>
             <TextInput
               label="Password"
               mode="outlined"
@@ -90,6 +126,12 @@ const Security = () => {
               onChangeText={onChange}
               value={value}
             />
+            {errors.password && (
+              <StyledText className="text-red-500">
+                {errors?.password?.message}
+              </StyledText>
+            )}
+            </>
           )}
         />
 
@@ -97,6 +139,7 @@ const Security = () => {
           control={control}
           name="confirmPassword"
           render={({ field: { onChange, onBlur, value } }) => (
+            <>
             <TextInput
               label="Retype new password"
               mode="outlined"
@@ -111,18 +154,25 @@ const Security = () => {
               onChangeText={onChange}
               value={value}
             />
+            {errors.confirmPassword && (
+              <StyledText className="text-red-500">
+                {errors?.confirmPassword?.message}
+              </StyledText>
+            )}
+            </>
           )}
         />
       </View>
 
-      <View className="w-full h-20 border-t border-gray-500 items-center justify-center">
+      <View className="w-full h-20 items-center justify-center">
         <Button
           mode="contained"
           className="w-[350px]"
-          disabled={!isValid}
+          disabled={!isValid || isLoading}
+          loading={isLoading}
           onPress={handleSubmit(onSubmit)}
         >
-          Change Password
+          {isLoading ? "Submitting..." : "Change Password"}
         </Button>
       </View>
     </StyledView>

@@ -5,6 +5,7 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import StyledText from "../StyledText";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
+import { Button } from "react-native-paper";
 
 const BottomDrawer = ({
   bottomSheetRef,
@@ -16,7 +17,6 @@ const BottomDrawer = ({
   handleClose,
   snapPoints,
 }) => {
-
   const renderItem = useCallback(
     (item, index) => {
       const isSelected = chosenRouteIndex === index;
@@ -71,13 +71,15 @@ const BottomDrawer = ({
             {searchLocation?.details.header}
           </StyledText>
           <StyledText>{searchLocation?.details.address}</StyledText>
+          <View className="flex-row mt-3">
+            <Button mode="contained">Directions</Button>
+            <Button mode="contained" className="bg-red-400">Start</Button>
+          </View>
           <BottomSheetScrollView style={{ marginVertical: 10 }}>
             {routesCoordinates.map(renderItem)}
           </BottomSheetScrollView>
         </BottomSheetView>
       </BottomSheet>
-
-    
     </>
   );
 };

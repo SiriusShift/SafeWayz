@@ -27,7 +27,7 @@ const Index = () => {
   const { showSnackbar } = useSnackbar();
 
   const type = SecureStore.getItem("vehicleType");
-  const snapPoints = ["35%", "50%", "100%"];
+  const snapPoints = ["35%", "50%", "85%"];
   const mapStyle = theme.dark ? nightMode : [];
 
   const [vehicleType, setVehicleType] = useState(null);
@@ -44,6 +44,8 @@ const Index = () => {
   const bottomSheetRef = useRef(null);
 
   const { data, isLoading, refetch } = useGetReportsQuery();
+
+  console.log(routesCoordinates)
 
   useRouteNavigation({
     mapRef,

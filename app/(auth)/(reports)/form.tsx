@@ -30,6 +30,7 @@ const ReportForm = () => {
   const dispatch = useDispatch();
   const reportImages = useSelector((state: any) => state.reports);
   const location = useSelector((state: any) => state.user.location);
+  
   const {
     control,
     handleSubmit,
