@@ -2,7 +2,7 @@ import { socket } from "@/socket";
 import { findClosestPointOnRoute } from "@/utils/map/mapHelpers";
 import { decodePolyline } from "@/utils/map/routeDecoder";
 import React, { useEffect } from "react";
-
+import { processGoogleRoutes } from "@/utils/map/routeProcessor";
 const useRouteNavigation = ({
   mapRef,
   searchLocation,
@@ -12,6 +12,7 @@ const useRouteNavigation = ({
   routesCoordinates,
   setTrackedRoute,
   setRoutesCoordinates,
+  startNavigationHandler,
   setRemainingRoute,
   showSnackbar,
   location,
@@ -28,7 +29,12 @@ const useRouteNavigation = ({
   };
 
   const fetchRoutes = async () => {
-    if (!location || !searchLocation) return;
+    if (!location || !searchLocation) {
+      console.warn(
+        "Invalid location or search location. Skipping fetchRoutes."
+      );
+      return;
+    }
 
     try {
       const departureTime = new Date(Date.now() + 60 * 1000).toISOString();
@@ -74,38 +80,7 @@ const useRouteNavigation = ({
       const data = await response.json();
 
       if (data.routes) {
-        const routesWithDetails = data.routes.map((route, index) => {
-          console.log(route);
-          const coordinates = decodePolyline(route.polyline.encodedPolyline);
-          const duration =
-            parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
-          const distance = route.distanceMeters ?? Infinity;
-          const midIndex = Math.floor(coordinates.length / 2);
-          const midPoint = coordinates[midIndex];
-
-          const segments = [];
-          const intervals =
-            route.legs?.[0]?.travelAdvisory?.speedReadingIntervals || [];
-
-          intervals.forEach((interval) => {
-            const { startPolylinePointIndex, endPolylinePointIndex, speed } =
-              interval;
-
-            let color = "#00B050"; // default to green (normal speed)
-            if (speed === "SLOW") color = "#FF9900";
-            else if (speed === "TRAFFIC_JAM") color = "#FF0000";
-
-            const segmentCoords = coordinates.slice(
-              startPolylinePointIndex,
-              endPolylinePointIndex + 1
-            );
-
-            segments.push({ coordinates: segmentCoords, color });
-          });
-
-          return { coordinates, duration, midPoint, index, distance, segments };
-        });
-
+        const routesWithDetails = processGoogleRoutes(data.routes);
         const shortestRouteIndex = routesWithDetails.reduce(
           (prev, curr) => (prev.duration < curr.duration ? prev : curr),
           routesWithDetails[0]
@@ -124,7 +99,7 @@ const useRouteNavigation = ({
     if (searchLocation) {
       fetchRoutes();
     }
-  }, [searchLocation]);
+  }, [searchLocation, location, vehicleType]);
 
   // Add a new effect that specifically watches for chosen route changes
   useEffect(() => {
@@ -192,17 +167,7 @@ const useRouteNavigation = ({
     }
   }, [location]);
 
-  useEffect(() => {
-    socket.on("test_event", (newReport) => {
-      console.log("New report received: ", newReport);
-      //   showSnackbar("New accident report", 3000, "success");
-    });
-    return () => {
-      socket.off("new_report");
-    };
-  }, [refetch]);
-
-  return fetchRoutes;
+  return {fetchRoutes};
 };
 
 export default useRouteNavigation;

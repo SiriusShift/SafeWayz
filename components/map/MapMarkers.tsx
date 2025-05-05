@@ -32,6 +32,7 @@ const MapMarkers = ({
   setChosenRouteIndex,
   startNavigation,
 }) => {
+  console.log("report data", data)
   return (
     <>
       {mapReady && location && (
@@ -74,8 +75,8 @@ const MapMarkers = ({
               />
 
               {/* Original route selection logic */}
-              {isChosen && startNavigation && route.segments?.length > 0 ? (
-                route.segments.map((segment, segIndex) => (
+              {isChosen && startNavigation && route?.segments?.length > 0 ? (
+                route?.segments?.map((segment, segIndex) => (
                   <Polyline
                     key={`segment-${index}-${segIndex}`}
                     coordinates={segment.coordinates}
@@ -95,7 +96,7 @@ const MapMarkers = ({
                 // Fallback: draw full polyline if no segments
                 <Polyline
                   coordinates={route.coordinates}
-                  strokeColor={isChosen ? "white" : "blue"}
+                  strokeColor={isChosen ? "red" : "blue"}
                   strokeWidth={isChosen ? 6 : 4}
                   zIndex={zIndex}
                   strokeLinecap="round"
@@ -113,7 +114,7 @@ const MapMarkers = ({
       {data &&
         location &&
         mapReady &&
-        data?.data?.map((item, index) => (
+        data?.map((item, index) => (
           <Marker
             key={index}
             coordinate={{

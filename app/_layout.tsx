@@ -15,6 +15,7 @@ import { SnackbarProvider } from "@/hooks/useSnackbar";
 import "react-native-get-random-values";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalProvider } from "@gorhom/portal";
+import { SocketProvider } from "@/context/socketContext";
 
 SplashScreen.preventAutoHideAsync(); // Prevent splash screen from hiding automatically
 
@@ -55,9 +56,11 @@ export default function RootLayout() {
 // 🔹 Ensures Auth Context is ready before rendering UI
 function AuthProviderWrapper() {
   return (
-    <AuthProvider>
-      <AuthGuard />
-    </AuthProvider>
+    <SocketProvider>
+      <AuthProvider>
+        <AuthGuard />
+      </AuthProvider>
+    </SocketProvider>
   );
 }
 

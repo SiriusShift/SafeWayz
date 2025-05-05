@@ -21,18 +21,22 @@ import BottomDrawer from "@/components/map/BottomSheet";
 import StyledText from "@/components/StyledText";
 import useTrackLocation from "@/hooks/useTrackLocation";
 import * as turf from "@turf/turf";
+import { useSocket } from "@/context/socketContext";
 
 const Index = () => {
   const theme = useTheme();
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
+  const { latestReport } = useSocket();
+  console.log(latestReport);
 
   const type = SecureStore.getItem("vehicleType");
   const snapPoints = ["35%", "50%", "85%"];
   const mapStyle = theme.dark ? nightMode : [];
 
   const [vehicleType, setVehicleType] = useState(null);
-  const [visible, setVisible] = useState(false);
+  const [roadModalVisible, setRoadModalVisible] = useState(false);
+  const [accidentModalVisible, setAccidentModalVisible] = useState(false);
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
@@ -45,35 +49,64 @@ const Index = () => {
   const mapRef = useRef(null);
   const bottomSheetRef = useRef(null);
 
-  const { data, isLoading, refetch } = useGetReportsQuery();
+  const checkForAccidentsOnRoute = () => {
+    if (!routesCoordinates?.length || !latestReport) return false;
 
-  console.log(routesCoordinates);
+    const selectedRoute = startNavigation
+      ? routesCoordinates[0]
+      : routesCoordinates[chosenRouteIndex];
 
-  const { fetchRoutes } = useRouteNavigation({
-    mapRef,
-    searchLocation,
-    chosenRouteIndex,
-    setChosenRouteIndex,
-    routesCoordinates,
-    trackedRoute,
-    setTrackedRoute,
-    setRoutesCoordinates,
-    setRemainingRoute,
-    showSnackbar,
-    location,
-    vehicleType,
-    refetch,
-  });
+    const routeLine = turf.lineString(
+      selectedRoute.coordinates.map(({ longitude, latitude }) => [
+        longitude,
+        latitude,
+      ])
+    );
+    const buffered = turf.buffer(routeLine, 0.05, { units: "kilometers" });
 
-  const { startLocationUpdates, stopLocationUpdates } = useTrackLocation({
-    setLocation,
-    showSnackbar: (msg) => console.log("Snackbar:", msg),
-    mapRef,
-    mapReady,
-  });
+    return latestReport.some((r) =>
+      turf.booleanPointInPolygon(
+        turf.point([r.longitude, r.latitude]),
+        buffered
+      )
+    );
+  };
+
+  const startNavigationHandler = () => {
+    const hasAccident = checkForAccidentsOnRoute();
+    if (hasAccident) {
+      setAccidentModalVisible(true);
+      return;
+    }
+    proceedWithNavigation();
+  };
+
+  const proceedWithNavigation = () => {
+    setStartNavigation(true);
+    setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
+    setAccidentModalVisible(false);
+  };
+
+  const snapToRoad = async () => {
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API;
+    const url = `https://roads.googleapis.com/v1/nearestRoads?points=${location.lat},${location.lng}&key=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.snappedPoints) {
+      router.push("/(auth)/(reports)");
+    } else {
+      console.log("Not on a road");
+      setRoadModalVisible(true);
+    }
+  };
 
   const handleClose = () => {
     bottomSheetRef.current?.close();
+  };
+
+  const handleModalClose = () => {
+    setRoadModalVisible(false);
   };
 
   const centerMap = () => {
@@ -89,6 +122,35 @@ const Index = () => {
     } else {
       startLocationUpdates();
     }
+  };
+
+  const { fetchRoutes } = useRouteNavigation({
+    mapRef,
+    searchLocation,
+    chosenRouteIndex,
+    setChosenRouteIndex,
+    routesCoordinates,
+    trackedRoute,
+    setTrackedRoute,
+    setRoutesCoordinates,
+    startNavigationHandler,
+    setRemainingRoute,
+    showSnackbar,
+    location,
+    vehicleType,
+  });
+
+  const { startLocationUpdates, stopLocationUpdates } = useTrackLocation({
+    setLocation,
+    showSnackbar: (msg) => console.log("Snackbar:", msg),
+    mapRef,
+    mapReady,
+  });
+
+  const reRouteNavigation = () => {
+    fetchRoutes();
+    setStartNavigation(false);
+    setRoadModalVisible(false);
   };
 
   useEffect(() => {
@@ -109,63 +171,11 @@ const Index = () => {
     fetchVehicleType();
   }, [type]);
 
-  const startNavigationHandler = () => {
-    if (!routesCoordinates[chosenRouteIndex] || !data) return;
-
-    const selectedRoute = routesCoordinates[chosenRouteIndex];
-    console.log(selectedRoute);
-
-    // Convert route coordinates to a LineString
-    const routeLine = turf.lineString(
-      selectedRoute.coordinates.map((point) => [
-        point.longitude,
-        point.latitude,
-      ])
-    );
-
-    // Optional: create a buffer zone around the route (e.g., 50 meters)
-    const bufferedRoute = turf.buffer(routeLine, 0.05, { units: "kilometers" });
-
-    // Extract accident points from API response (adjust as needed)
-    const accidentPoints = data?.data?.map((report) =>
-      turf.point([report.longitude, report.latitude])
-    );
-
-    // Check if any accidents fall within the buffered route
-    const accidentsOnRoute = accidentPoints.filter((point) =>
-      turf.booleanPointInPolygon(point, bufferedRoute)
-    );
-
-    if (accidentsOnRoute.length > 0) {
-      console.warn("⚠️ Accident detected on route");
-      setVisible(true);
-      return;
+  useEffect(() => {
+    if (latestReport && startNavigation) {
+      startNavigationHandler();
     }
-
-    // Continue with navigation
-    setChosenRoute();
-  };
-
-  const setChosenRoute = () => {
-    setStartNavigation(true);
-    setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
-    setVisible(false);
-    return;
-  };
-
-  const snapToRoad = async () => {
-    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API;
-    const url = `https://roads.googleapis.com/v1/nearestRoads?points=${location.lat},${location.lng}&key=${apiKey}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.snappedPoints) {
-      router.push("/(auth)/(reports)");
-    } else {
-      console.log("Not on a road");
-      setVisible(true);
-    }
-  };
+  }, [latestReport]);
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -198,7 +208,7 @@ const Index = () => {
             searchLocation={searchLocation}
             trackedRoute={trackedRoute}
             startNavigation={startNavigation}
-            data={data}
+            data={latestReport}
             remainingRoute={remainingRoute}
             chosenRouteIndex={chosenRouteIndex}
             setChosenRouteIndex={setChosenRouteIndex}
@@ -245,8 +255,8 @@ const Index = () => {
 
         <Portal>
           <Modal
-            visible={visible}
-            onDismiss={() => setVisible(false)}
+            visible={roadModalVisible}
+            onDismiss={() => setRoadModalVisible(false)}
             contentContainerStyle={styles.modalContainer}
           >
             <View style={styles.modalContent}>
@@ -257,7 +267,7 @@ const Index = () => {
                 We couldn't detect a nearby road. Please check your location or
                 try again.
               </StyledText>
-              <Button mode="contained" onPress={() => setVisible(false)}>
+              <Button mode="contained" onPress={() => setRoadModalVisible(false)}>
                 <Text>Close</Text>
               </Button>
             </View>
@@ -265,21 +275,29 @@ const Index = () => {
         </Portal>
         <Portal>
           <Modal
-            visible={visible}
-            onDismiss={() => setVisible(false)}
+            visible={accidentModalVisible}
+            onDismiss={() => setAccidentModalVisible(false)}
             contentContainerStyle={styles.modalContainer}
           >
             <View style={styles.modalContent}>
               <Text className="text-2xl font-bold mb-4">Accident Detected</Text>
               <Text className="text-base mb-4">
-                We detected an accident on your route. Do you want to continue?
+                We detected an accident on your route. Do you want to{" "}
+                {startNavigation ? "re-route" : "continue"}?
               </Text>
               <View className="flex flex-row gap-5">
-                <Button mode="outlined" onPress={() => setVisible(false)}>
+                <Button mode="outlined" onPress={() => handleModalClose()}>
                   <Text>Close</Text>
                 </Button>
-                <Button mode="contained" onPress={() => setChosenRoute()}>
-                  <Text>Continue</Text>
+                <Button
+                  mode="contained"
+                  onPress={() =>
+                    startNavigation
+                      ? reRouteNavigation()
+                      : proceedWithNavigation()
+                  }
+                >
+                  <Text>{startNavigation ? "Re-route" : "Continue"}</Text>
                 </Button>
               </View>
             </View>
