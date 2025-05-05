@@ -19,7 +19,19 @@ const reports_notified = {
   "Hit and run": require("@/assets/images/hitrun_mark_notified.png"),
 };
 
-const MapMarkers = ({location, mapReady, vehicleType, routesCoordinates, searchLocation, data, trackedRoute, remainingRoute, chosenRouteIndex, setChosenRouteIndex}) => {
+const MapMarkers = ({
+  location,
+  mapReady,
+  vehicleType,
+  routesCoordinates,
+  searchLocation,
+  data,
+  trackedRoute,
+  remainingRoute,
+  chosenRouteIndex,
+  setChosenRouteIndex,
+  startNavigation,
+}) => {
   return (
     <>
       {mapReady && location && (
@@ -35,10 +47,9 @@ const MapMarkers = ({location, mapReady, vehicleType, routesCoordinates, searchL
       )}
       {mapReady &&
         routesCoordinates.map((route, index) => {
-          const zIndex = isChosen
-            ? routesCoordinates.length + 1
-            : routesCoordinates.length - index;
+          console.log(route);
           const isChosen = index === chosenRouteIndex;
+          const zIndex = isChosen ? routesCoordinates.length + 1 : index;
 
           return (
             <React.Fragment key={index}>
@@ -63,22 +74,39 @@ const MapMarkers = ({location, mapReady, vehicleType, routesCoordinates, searchL
               />
 
               {/* Original route selection logic */}
-              <Polyline
-                coordinates={route.coordinates}
-                tappable={true}
-                onPress={(e) => {
-                  e.stopPropagation && e.stopPropagation();
-                  setChosenRouteIndex(index);
-                  if (route.onSelect) {
-                    route.onSelect(index);
-                  }
-                }}
-                strokeColor={isChosen ? "red" : "blue"}
-                strokeWidth={isChosen ? 6 : 4}
-                zIndex={zIndex}
-                strokeLinecap="round"
-                lineJoin="round"
-              />
+              {isChosen && startNavigation && route.segments?.length > 0 ? (
+                route.segments.map((segment, segIndex) => (
+                  <Polyline
+                    key={`segment-${index}-${segIndex}`}
+                    coordinates={segment.coordinates}
+                    strokeColor={segment.color}
+                    strokeWidth={6}
+                    zIndex={zIndex}
+                    strokeLinecap="round"
+                    lineJoin="round"
+                    tappable={true}
+                    onPress={(e) => {
+                      e.stopPropagation && e.stopPropagation();
+                      setChosenRouteIndex(index);
+                    }}
+                  />
+                ))
+              ) : (
+                // Fallback: draw full polyline if no segments
+                <Polyline
+                  coordinates={route.coordinates}
+                  strokeColor={isChosen ? "white" : "blue"}
+                  strokeWidth={isChosen ? 6 : 4}
+                  zIndex={zIndex}
+                  strokeLinecap="round"
+                  lineJoin="round"
+                  tappable={true}
+                  onPress={(e) => {
+                    e.stopPropagation && e.stopPropagation();
+                    setChosenRouteIndex(index);
+                  }}
+                />
+              )}
             </React.Fragment>
           );
         })}

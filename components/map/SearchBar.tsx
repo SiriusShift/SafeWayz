@@ -10,6 +10,7 @@ const SearchBar = ({
   handleClose,
   setSearchLocation,
   setRoutesCoordinates,
+  setStartNavigation,
   searchLocation,
   mapReady,
 }) => {
@@ -68,6 +69,7 @@ const SearchBar = ({
               setSearchLocation(null);
               searchRef.current?.clear();
               setRoutesCoordinates([]);
+              setStartNavigation(false);
               handleClose();
             }}
             name="close"

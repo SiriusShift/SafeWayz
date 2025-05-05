@@ -19,7 +19,8 @@ import SearchBar from "@/components/map/SearchBar";
 import useRouteNavigation from "@/hooks/useRouteNavigation";
 import BottomDrawer from "@/components/map/BottomSheet";
 import StyledText from "@/components/StyledText";
-import useTrackLocation from "@/components/map/TrackLocation";
+import useTrackLocation from "@/hooks/useTrackLocation";
+import * as turf from "@turf/turf";
 
 const Index = () => {
   const theme = useTheme();
@@ -36,6 +37,7 @@ const Index = () => {
   const [searchLocation, setSearchLocation] = useState(null);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
+  const [startNavigation, setStartNavigation] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [trackedRoute, setTrackedRoute] = useState([]);
   const [remainingRoute, setRemainingRoute] = useState([]);
@@ -45,9 +47,9 @@ const Index = () => {
 
   const { data, isLoading, refetch } = useGetReportsQuery();
 
-  console.log(routesCoordinates)
+  console.log(routesCoordinates);
 
-  useRouteNavigation({
+  const { fetchRoutes } = useRouteNavigation({
     mapRef,
     searchLocation,
     chosenRouteIndex,
@@ -107,6 +109,50 @@ const Index = () => {
     fetchVehicleType();
   }, [type]);
 
+  const startNavigationHandler = () => {
+    if (!routesCoordinates[chosenRouteIndex] || !data) return;
+
+    const selectedRoute = routesCoordinates[chosenRouteIndex];
+    console.log(selectedRoute);
+
+    // Convert route coordinates to a LineString
+    const routeLine = turf.lineString(
+      selectedRoute.coordinates.map((point) => [
+        point.longitude,
+        point.latitude,
+      ])
+    );
+
+    // Optional: create a buffer zone around the route (e.g., 50 meters)
+    const bufferedRoute = turf.buffer(routeLine, 0.05, { units: "kilometers" });
+
+    // Extract accident points from API response (adjust as needed)
+    const accidentPoints = data?.data?.map((report) =>
+      turf.point([report.longitude, report.latitude])
+    );
+
+    // Check if any accidents fall within the buffered route
+    const accidentsOnRoute = accidentPoints.filter((point) =>
+      turf.booleanPointInPolygon(point, bufferedRoute)
+    );
+
+    if (accidentsOnRoute.length > 0) {
+      console.warn("⚠️ Accident detected on route");
+      setVisible(true);
+      return;
+    }
+
+    // Continue with navigation
+    setChosenRoute();
+  };
+
+  const setChosenRoute = () => {
+    setStartNavigation(true);
+    setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
+    setVisible(false);
+    return;
+  };
+
   const snapToRoad = async () => {
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API;
     const url = `https://roads.googleapis.com/v1/nearestRoads?points=${location.lat},${location.lng}&key=${apiKey}`;
@@ -133,7 +179,7 @@ const Index = () => {
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          showsTraffic={true}
+          showsTraffic={!startNavigation && true}
           showsCompass={false}
           customMapStyle={mapStyle}
           onMapReady={() => setMapReady(true)}
@@ -151,6 +197,7 @@ const Index = () => {
             routesCoordinates={routesCoordinates}
             searchLocation={searchLocation}
             trackedRoute={trackedRoute}
+            startNavigation={startNavigation}
             data={data}
             remainingRoute={remainingRoute}
             chosenRouteIndex={chosenRouteIndex}
@@ -164,6 +211,7 @@ const Index = () => {
           setSearchLocation={setSearchLocation}
           handleClose={handleClose}
           setRoutesCoordinates={setRoutesCoordinates}
+          setStartNavigation={setStartNavigation}
           searchLocation={searchLocation}
           mapReady={mapReady}
           theme={theme}
@@ -188,6 +236,8 @@ const Index = () => {
           chosenRouteIndex={chosenRouteIndex}
           setChosenRouteIndex={setChosenRouteIndex}
           theme={theme}
+          setStartNavigation={startNavigationHandler}
+          startNavigation={startNavigation}
           searchLocation={searchLocation}
           handleClose={handleClose}
           snapPoints={snapPoints}
@@ -213,6 +263,28 @@ const Index = () => {
             </View>
           </Modal>
         </Portal>
+        <Portal>
+          <Modal
+            visible={visible}
+            onDismiss={() => setVisible(false)}
+            contentContainerStyle={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <Text className="text-2xl font-bold mb-4">Accident Detected</Text>
+              <Text className="text-base mb-4">
+                We detected an accident on your route. Do you want to continue?
+              </Text>
+              <View className="flex flex-row gap-5">
+                <Button mode="outlined" onPress={() => setVisible(false)}>
+                  <Text>Close</Text>
+                </Button>
+                <Button mode="contained" onPress={() => setChosenRoute()}>
+                  <Text>Continue</Text>
+                </Button>
+              </View>
+            </View>
+          </Modal>
+        </Portal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -225,6 +297,12 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    marginHorizontal: 20,
+    borderRadius: 10,
   },
   add: {
     position: "absolute",

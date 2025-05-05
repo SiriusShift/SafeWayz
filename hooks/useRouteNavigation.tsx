@@ -16,7 +16,7 @@ const useRouteNavigation = ({
   showSnackbar,
   location,
   vehicleType,
-  refetch
+  refetch,
 }) => {
   const zoomOutToFitRoute = () => {
     if (mapRef.current && location && searchLocation) {
@@ -42,7 +42,7 @@ const useRouteNavigation = ({
           "Content-Type": "application/json",
           "X-Goog-Api-Key": process.env.EXPO_PUBLIC_GOOGLE_API,
           "X-Goog-FieldMask":
-            "routes.duration,routes.distanceMeters,routes.polyline,routes.legs,routes.routeLabels,routes.travelAdvisory,routes.travelAdvisory.tollInfo,routes.routeToken",
+            "routes.duration,routes.distanceMeters,routes.polyline,routes.legs,routes.routeLabels,routes.travelAdvisory,routes.travelAdvisory.tollInfo,routes.routeToken,routes.legs.travelAdvisory,routes.legs.travelAdvisory.speedReadingIntervals",
         },
         body: JSON.stringify({
           origin: {
@@ -61,10 +61,12 @@ const useRouteNavigation = ({
               },
             },
           },
+          extraComputations: ["TRAFFIC_ON_POLYLINE"],
+          routingPreference: "TRAFFIC_AWARE_OPTIMAL",
           travelMode: vehicleType?.mode || "DRIVE",
-          routingPreference: "TRAFFIC_AWARE",
           computeAlternativeRoutes: true,
           departureTime,
+          polylineQuality: "HIGH_QUALITY",
           units: "METRIC",
         }),
       });
@@ -73,6 +75,7 @@ const useRouteNavigation = ({
 
       if (data.routes) {
         const routesWithDetails = data.routes.map((route, index) => {
+          console.log(route);
           const coordinates = decodePolyline(route.polyline.encodedPolyline);
           const duration =
             parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
@@ -80,7 +83,27 @@ const useRouteNavigation = ({
           const midIndex = Math.floor(coordinates.length / 2);
           const midPoint = coordinates[midIndex];
 
-          return { coordinates, duration, midPoint, index, distance };
+          const segments = [];
+          const intervals =
+            route.legs?.[0]?.travelAdvisory?.speedReadingIntervals || [];
+
+          intervals.forEach((interval) => {
+            const { startPolylinePointIndex, endPolylinePointIndex, speed } =
+              interval;
+
+            let color = "#00B050"; // default to green (normal speed)
+            if (speed === "SLOW") color = "#FF9900";
+            else if (speed === "TRAFFIC_JAM") color = "#FF0000";
+
+            const segmentCoords = coordinates.slice(
+              startPolylinePointIndex,
+              endPolylinePointIndex + 1
+            );
+
+            segments.push({ coordinates: segmentCoords, color });
+          });
+
+          return { coordinates, duration, midPoint, index, distance, segments };
         });
 
         const shortestRouteIndex = routesWithDetails.reduce(
@@ -172,14 +195,14 @@ const useRouteNavigation = ({
   useEffect(() => {
     socket.on("test_event", (newReport) => {
       console.log("New report received: ", newReport);
-    //   showSnackbar("New accident report", 3000, "success");
+      //   showSnackbar("New accident report", 3000, "success");
     });
     return () => {
       socket.off("new_report");
     };
   }, [refetch]);
 
-  return null;
+  return fetchRoutes;
 };
 
 export default useRouteNavigation;

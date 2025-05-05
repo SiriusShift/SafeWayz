@@ -12,11 +12,14 @@ const BottomDrawer = ({
   routesCoordinates,
   chosenRouteIndex,
   setChosenRouteIndex,
+  startNavigation,
+  setStartNavigation,
   theme,
   searchLocation,
   handleClose,
   snapPoints,
 }) => {
+  console.log(routesCoordinates);
   const renderItem = useCallback(
     (item, index) => {
       const isSelected = chosenRouteIndex === index;
@@ -72,8 +75,15 @@ const BottomDrawer = ({
           </StyledText>
           <StyledText>{searchLocation?.details.address}</StyledText>
           <View className="flex-row mt-3">
-            <Button mode="contained">Directions</Button>
-            <Button mode="contained" className="bg-red-400">Start</Button>
+            {!startNavigation && (
+              <Button
+                mode="contained"
+                onPress={() => setStartNavigation()}
+                className="bg-red-400"
+              >
+                Start
+              </Button>
+            )}
           </View>
           <BottomSheetScrollView style={{ marginVertical: 10 }}>
             {routesCoordinates.map(renderItem)}
