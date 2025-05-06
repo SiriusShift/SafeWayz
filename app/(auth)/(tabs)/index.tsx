@@ -42,6 +42,7 @@ const Index = () => {
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
   const [chosenRouteIndex, setChosenRouteIndex] = useState(null);
   const [startNavigation, setStartNavigation] = useState(false);
+  const [speed, setSpeed] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [trackedRoute, setTrackedRoute] = useState([]);
   const [remainingRoute, setRemainingRoute] = useState([]);
@@ -83,7 +84,7 @@ const Index = () => {
 
   const proceedWithNavigation = () => {
     setStartNavigation(true);
-    setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
+    // setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
     setAccidentModalVisible(false);
   };
 
@@ -145,6 +146,7 @@ const Index = () => {
     showSnackbar: (msg) => console.log("Snackbar:", msg),
     mapRef,
     mapReady,
+    setSpeed
   });
 
   const reRouteNavigation = () => {
@@ -234,6 +236,9 @@ const Index = () => {
           onPress={() => router.push("/(auth)/(reports)")}
         />
 
+
+
+        
         <FAB
           style={[styles.center, { backgroundColor: theme.colors.background }]}
           icon="crosshairs-gps"

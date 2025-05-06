@@ -60,7 +60,7 @@ const signIn = () => {
       <Image source={Logo} style={{ height: 70, width: 70 }} />
 
       {/* Welcome Text */}
-      <StyledText className="text-3xl font-bold">Welcome Back!</StyledText>
+      <StyledText className="text-3xl font-bold">Welcome to PathAlert</StyledText>
       {/* Input Fields */}
       <View className="w-5/6 gap-y-3">
         <Controller

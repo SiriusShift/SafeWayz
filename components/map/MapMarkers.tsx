@@ -75,7 +75,7 @@ const MapMarkers = ({
               />
 
               {/* Original route selection logic */}
-              {isChosen && startNavigation && route?.segments?.length > 0 ? (
+              {isChosen && route?.segments?.length > 0 ? (
                 route?.segments?.map((segment, segIndex) => (
                   <Polyline
                     key={`segment-${index}-${segIndex}`}
@@ -96,7 +96,7 @@ const MapMarkers = ({
                 // Fallback: draw full polyline if no segments
                 <Polyline
                   coordinates={route.coordinates}
-                  strokeColor={isChosen ? "red" : "blue"}
+                  strokeColor={isChosen ? "red" : "#98F5F9"}
                   strokeWidth={isChosen ? 6 : 4}
                   zIndex={zIndex}
                   strokeLinecap="round"

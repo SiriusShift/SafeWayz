@@ -4,7 +4,7 @@ import { Alert, Linking } from "react-native";
 import { useDispatch } from "react-redux";
 import { setUserLocation } from "@/features/authentication/reducers/loginSlice";
 
-const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady }) => {
+const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpeed }) => {
   const locationSubscription = useRef(null);
   const dispatch = useDispatch();
 
@@ -45,6 +45,8 @@ const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady }) => {
           distanceInterval: 5,
         },
         (newLocation) => {
+          console.log(newLocation);
+          setSpeed(newLocation.coords.speed);
           const userLocation = {
             latitude: newLocation.coords.latitude,
             longitude: newLocation.coords.longitude,
