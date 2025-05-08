@@ -50,8 +50,11 @@ const Index = () => {
   const mapRef = useRef(null);
   const bottomSheetRef = useRef(null);
 
+  console.log(speed)
+
   const checkForAccidentsOnRoute = () => {
     if (!routesCoordinates?.length || !latestReport) return false;
+    if (chosenRouteIndex == null && !startNavigation) return false;
 
     const selectedRoute = startNavigation
       ? routesCoordinates[0]
@@ -134,11 +137,12 @@ const Index = () => {
     trackedRoute,
     setTrackedRoute,
     setRoutesCoordinates,
-    startNavigationHandler,
+    startNavigation,
     setRemainingRoute,
     showSnackbar,
     location,
     vehicleType,
+    speed
   });
 
   const { startLocationUpdates, stopLocationUpdates } = useTrackLocation({
@@ -146,7 +150,8 @@ const Index = () => {
     showSnackbar: (msg) => console.log("Snackbar:", msg),
     mapRef,
     mapReady,
-    setSpeed
+    setSpeed,
+    startNavigation
   });
 
   const reRouteNavigation = () => {
@@ -236,9 +241,6 @@ const Index = () => {
           onPress={() => router.push("/(auth)/(reports)")}
         />
 
-
-
-        
         <FAB
           style={[styles.center, { backgroundColor: theme.colors.background }]}
           icon="crosshairs-gps"

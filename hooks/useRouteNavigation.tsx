@@ -12,7 +12,7 @@ const useRouteNavigation = ({
   routesCoordinates,
   setTrackedRoute,
   setRoutesCoordinates,
-  startNavigationHandler,
+  startNavigation,
   setRemainingRoute,
   showSnackbar,
   location,
@@ -78,6 +78,8 @@ const useRouteNavigation = ({
       });
 
       const data = await response.json();
+      
+      console.log("data of route", data)
 
       if (data.routes) {
         const routesWithDetails = processGoogleRoutes(data.routes);
@@ -95,11 +97,74 @@ const useRouteNavigation = ({
     }
   };
 
+  const refreshRouteEta = async (routeToken, index) => {
+    try {
+      const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": process.env.EXPO_PUBLIC_GOOGLE_API,
+          "X-Goog-FieldMask":
+            "routes.duration,routes.distanceMeters,routes.travelAdvisory",
+        },
+        body: JSON.stringify({
+          routeToken,
+          origin: {
+            location: {
+              latLng: {
+                latitude: location.latitude,
+                longitude: location.longitude,
+              },
+            },
+          },
+          destination: {
+            location: {
+              latLng: {
+                latitude: searchLocation.location.latitude,
+                longitude: searchLocation.location.longitude,
+              },
+            },
+          },
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.routes?.[0]) {
+        return {
+          eta: data.routes[0].duration,
+          distance: data.routes[0].distanceMeters,
+          advisory: data.routes[0].travelAdvisory,
+        };
+      }
+    } catch (error) {
+      console.error("Error refreshing route ETA:", error);
+    }
+  };
+
+
+  const refreshAllRouteMetrics = async () => {
+    const updated = await Promise.all(
+      routesCoordinates.map(async (route, index) => {
+        const update = await refreshRouteEta(route.routeToken);
+        console.log("update",update)
+        return {
+          ...route,
+          eta: update?.eta || route.eta,
+          distance: update?.distance || route?.distance,
+          travelAdvisory: update?.advisory || route.travelAdvisory,
+        };
+      })
+    );
+    setRoutesCoordinates(updated);
+  };
+  
+
   useEffect(() => {
     if (searchLocation) {
       fetchRoutes();
     }
-  }, [searchLocation, location, vehicleType]);
+  }, [searchLocation, vehicleType]);
 
   // Add a new effect that specifically watches for chosen route changes
   useEffect(() => {
@@ -142,9 +207,13 @@ const useRouteNavigation = ({
       chosenRouteIndex !== null &&
       routesCoordinates.length > 0 &&
       location &&
+      startNavigation &&
       routesCoordinates[chosenRouteIndex]?.coordinates &&
       trackedRoute.length > 0 // Only update if we already have a tracked route
     ) {
+      //Update Route
+      refreshAllRouteMetrics()
+
       const currentRoute = routesCoordinates[chosenRouteIndex];
 
       // Find the closest point on the route

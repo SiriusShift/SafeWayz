@@ -4,7 +4,7 @@ import { Alert, Linking } from "react-native";
 import { useDispatch } from "react-redux";
 import { setUserLocation } from "@/features/authentication/reducers/loginSlice";
 
-const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpeed }) => {
+const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpeed, startNavigation }) => {
   const locationSubscription = useRef(null);
   const dispatch = useDispatch();
 
@@ -41,7 +41,7 @@ const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpee
       locationSubscription.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 2000,
+          timeInterval: 3000,
           distanceInterval: 5,
         },
         (newLocation) => {
@@ -55,7 +55,7 @@ const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpee
           setLocation(userLocation);
           dispatch(setUserLocation(userLocation));
 
-          if (mapReady && mapRef?.current) {
+          if (mapReady && mapRef?.current && startNavigation) {
             mapRef.current.animateToRegion(
               {
                 ...userLocation,

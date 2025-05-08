@@ -15,7 +15,6 @@ const TabsLayout = () => {
           tabBarShowLabel: false,
           tabBarStyle: {
             backgroundColor: theme.colors.background,
-            position: "absolute",
             alignContent: "center",
             // borderTopWidth: 1,
             // borderTopColor: theme.colors.background,
