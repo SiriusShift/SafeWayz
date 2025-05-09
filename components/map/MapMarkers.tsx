@@ -3,6 +3,7 @@ import { Image } from "react-native";
 import { Marker, Polyline } from "react-native-maps";
 import DefaultAccident from "@/assets/images/accident_mark.png";
 import DefaultNotified from "@/assets/images/accident_mark_notified.png";
+import StartMarker from "@/assets/images/start_marker.png";
 
 const images = {
   car: require("@/assets/images/car.png"),
@@ -30,9 +31,9 @@ const MapMarkers = ({
   remainingRoute,
   chosenRouteIndex,
   setChosenRouteIndex,
-  startNavigation,
+  // startLocation,
 }) => {
-  console.log("report data", data)
+  console.log("report data", data);
   return (
     <>
       {mapReady && location && (
@@ -44,7 +45,15 @@ const MapMarkers = ({
         </Marker>
       )}
       {mapReady && searchLocation && (
-        <Marker coordinate={searchLocation.location} />
+        <>
+          <Marker coordinate={searchLocation.location} />
+          <Marker coordinate={searchLocation.start}>
+            <Image
+              source={StartMarker}
+              style={{ width: 35, height: 35, resizeMode: "contain" }}
+            />
+          </Marker>
+        </>
       )}
       {mapReady &&
         routesCoordinates.map((route, index) => {

@@ -5,17 +5,17 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 
 const SearchBar = ({
   mapRef,
+  searchRef,
   bottomSheetRef,
   theme,
   handleClose,
+  location,
   setSearchLocation,
-  setRoutesCoordinates,
-  setStartNavigation,
   searchLocation,
   mapReady,
 }) => {
-  const searchRef = useRef(null);
 
+  console.log(location)
   return (
     <GooglePlacesAutocomplete
       placeholder="Search"
@@ -40,11 +40,9 @@ const SearchBar = ({
           details: {
             header: details.name,
             type: details.types[0],
-            rating: details.rating,
-            totalRating: details.user_ratings_total,
             address: data.structured_formatting.secondary_text,
-            openingHours: details.current_opening_hours,
           },
+          start: location
         });
 
         setTimeout(() => {
@@ -66,10 +64,6 @@ const SearchBar = ({
         return searchLocation ? (
           <Ionicons
             onPress={() => {
-              setSearchLocation(null);
-              searchRef.current?.clear();
-              setRoutesCoordinates([]);
-              setStartNavigation(false);
               handleClose();
             }}
             name="close"

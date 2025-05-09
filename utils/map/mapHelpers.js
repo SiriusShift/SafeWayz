@@ -28,27 +28,8 @@ export const findClosestPointOnRoute = (userLocation, routeCoordinates) => {
   return { closestIndex, minDistance };
 };
 
-
-export function calculateRemainingMetrics(remainingRouteCoords, currentSpeed) {
-  if (!remainingRouteCoords?.length || currentSpeed == null || currentSpeed <= 0) {
-    return { distance: 0, eta: 0 };
-  }
-
-  // Calculate remaining distance in degrees
-  const totalDistance = remainingRouteCoords.reduce((sum, point, index, arr) => {
-    if (index === 0) return 0;
-    const dx = arr[index].latitude - arr[index - 1].latitude;
-    const dy = arr[index].longitude - arr[index - 1].longitude;
-    return sum + Math.sqrt(dx * dx + dy * dy);
-  }, 0);
-
-  const distanceMeters = totalDistance * 111139;
-
-  // Use speed (in m/s) to calculate ETA
-  const eta = distanceMeters / currentSpeed; // seconds
-
-  return {
-    distance: distanceMeters,
-    eta: eta,
-  };
-}
+export const formatDuration = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};

@@ -1,8 +1,10 @@
 import { socket } from "@/socket";
 import { findClosestPointOnRoute } from "@/utils/map/mapHelpers";
 import { decodePolyline } from "@/utils/map/routeDecoder";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { processGoogleRoutes } from "@/utils/map/routeProcessor";
+import * as turf from "@turf/turf";
+
 const useRouteNavigation = ({
   mapRef,
   searchLocation,
@@ -18,15 +20,9 @@ const useRouteNavigation = ({
   location,
   vehicleType,
   refetch,
+  zoomOutToFitRoute,
 }) => {
-  const zoomOutToFitRoute = () => {
-    if (mapRef.current && location && searchLocation) {
-      mapRef.current.fitToCoordinates([location, searchLocation.location], {
-        edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-        animated: true,
-      });
-    }
-  };
+  const lastClosestIndexRef = useRef(0);
 
   const fetchRoutes = async () => {
     if (!location || !searchLocation) {
@@ -78,8 +74,8 @@ const useRouteNavigation = ({
       });
 
       const data = await response.json();
-      
-      console.log("data of route", data)
+
+      console.log("data of route", data);
 
       if (data.routes) {
         const routesWithDetails = processGoogleRoutes(data.routes);
@@ -97,39 +93,42 @@ const useRouteNavigation = ({
     }
   };
 
-  const refreshRouteEta = async (routeToken, index) => {
+  const refreshRouteEta = async (routeToken) => {
     try {
-      const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": process.env.EXPO_PUBLIC_GOOGLE_API,
-          "X-Goog-FieldMask":
-            "routes.duration,routes.distanceMeters,routes.travelAdvisory",
-        },
-        body: JSON.stringify({
-          routeToken,
-          origin: {
-            location: {
-              latLng: {
-                latitude: location.latitude,
-                longitude: location.longitude,
+      const response = await fetch(
+        "https://routes.googleapis.com/directions/v2:computeRoutes",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": process.env.EXPO_PUBLIC_GOOGLE_API,
+            "X-Goog-FieldMask":
+              "routes.duration,routes.distanceMeters,routes.travelAdvisory",
+          },
+          body: JSON.stringify({
+            routeToken,
+            origin: {
+              location: {
+                latLng: {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                },
               },
             },
-          },
-          destination: {
-            location: {
-              latLng: {
-                latitude: searchLocation.location.latitude,
-                longitude: searchLocation.location.longitude,
+            destination: {
+              location: {
+                latLng: {
+                  latitude: searchLocation.location.latitude,
+                  longitude: searchLocation.location.longitude,
+                },
               },
             },
-          },
-        }),
-      });
-  
+          }),
+        }
+      );
+
       const data = await response.json();
-  
+
       if (data.routes?.[0]) {
         return {
           eta: data.routes[0].duration,
@@ -142,15 +141,16 @@ const useRouteNavigation = ({
     }
   };
 
-
   const refreshAllRouteMetrics = async () => {
     const updated = await Promise.all(
       routesCoordinates.map(async (route, index) => {
         const update = await refreshRouteEta(route.routeToken);
-        console.log("update",update)
+        console.log("update", update);
         return {
           ...route,
-          eta: update?.eta || route.eta,
+          eta:
+            parseInt(update?.eta.split("s")[0]) ||
+            parseInt(route.eta.split("s")[0]),
           distance: update?.distance || route?.distance,
           travelAdvisory: update?.advisory || route.travelAdvisory,
         };
@@ -158,7 +158,26 @@ const useRouteNavigation = ({
     );
     setRoutesCoordinates(updated);
   };
-  
+
+  const checkInRoute = () => {
+    if (!routesCoordinates?.length) return false;
+    if (chosenRouteIndex == null && !startNavigation) return false;
+
+    const selectedRoute = routesCoordinates[chosenRouteIndex];
+
+    const routeLine = turf.lineString(
+      selectedRoute.coordinates.map(({ longitude, latitude }) => [
+        longitude,
+        latitude,
+      ])
+    );
+    const buffered = turf.buffer(routeLine, 25, { units: "meters" });
+
+    return turf.booleanPointInPolygon(
+      turf.point([location.longitude, location.latitude]),
+      buffered
+    );
+  };
 
   useEffect(() => {
     if (searchLocation) {
@@ -171,35 +190,34 @@ const useRouteNavigation = ({
     if (
       chosenRouteIndex !== null &&
       routesCoordinates.length > 0 &&
-      routesCoordinates[chosenRouteIndex]?.coordinates
+      routesCoordinates[chosenRouteIndex]?.coordinates &&
+      location
     ) {
-      // When route changes, update the tracking based on current location
       const currentRoute = routesCoordinates[chosenRouteIndex];
-
-      if (location) {
-        const { closestIndex } = findClosestPointOnRoute(
-          location,
-          currentRoute.coordinates
-        );
-
-        // Split the route into tracked and remaining segments
-        const newTrackedRoute = currentRoute.coordinates.slice(
-          0,
-          closestIndex + 1
-        );
-        const newRemainingRoute = currentRoute.coordinates.slice(
-          closestIndex + 1
-        );
-
-        setTrackedRoute(newTrackedRoute);
-        setRemainingRoute(newRemainingRoute);
-      } else {
-        // If no location yet, reset tracking
-        setTrackedRoute([]);
-        setRemainingRoute(currentRoute.coordinates);
-      }
+      const startIndex = lastClosestIndexRef.current || 0;
+  
+      const { closestIndex } = findClosestPointOnRoute(
+        location,
+        currentRoute.coordinates,
+        startIndex
+      );
+  
+      // Update last closest index for next run
+      lastClosestIndexRef.current = closestIndex;
+  
+      const newTrackedRoute = currentRoute.coordinates.slice(
+        0,
+        closestIndex + 1
+      );
+      const newRemainingRoute = currentRoute.coordinates.slice(
+        closestIndex + 1
+      );
+  
+      setTrackedRoute(newTrackedRoute);
+      setRemainingRoute(newRemainingRoute);
     }
-  }, [chosenRouteIndex, routesCoordinates]);
+  }, [location]);
+  
 
   // Keep the existing effect for updating tracking during movement
   useEffect(() => {
@@ -212,7 +230,14 @@ const useRouteNavigation = ({
       trackedRoute.length > 0 // Only update if we already have a tracked route
     ) {
       //Update Route
-      refreshAllRouteMetrics()
+      refreshAllRouteMetrics();
+      const userInRoute = checkInRoute();
+      console.log("user in route",userInRoute);
+
+      if(!userInRoute){
+        console.log("route change")
+        fetchRoutes();
+      }
 
       const currentRoute = routesCoordinates[chosenRouteIndex];
 
@@ -236,7 +261,7 @@ const useRouteNavigation = ({
     }
   }, [location]);
 
-  return {fetchRoutes};
+  return { fetchRoutes };
 };
 
 export default useRouteNavigation;

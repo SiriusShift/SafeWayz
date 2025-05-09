@@ -8,6 +8,7 @@ import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Button, useTheme } from "react-native-paper";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatDuration } from "@/utils/map/mapHelpers";
 
 const BottomDrawer = ({
   bottomSheetRef,
@@ -20,17 +21,24 @@ const BottomDrawer = ({
   searchLocation,
   handleClose,
   snapPoints,
+  zoomOutToFitRoute,
 }) => {
+  console.log("bottomsheet", routesCoordinates[chosenRouteIndex]);
   const insets = useSafeAreaInsets(); // 👈 Safe area for tab bar
-  const hours = Math.floor(
-    routesCoordinates[chosenRouteIndex]?.duration / 3600
-  );
-  const minutes = Math.floor(
-    (routesCoordinates[chosenRouteIndex]?.duration % 3600) / 60
-  );
+  // const hours = Math.floor(
+  //   routesCoordinates[chosenRouteIndex]?.eta / 3600
+  // );
+  // const minutes = Math.floor(
+  //   (routesCoordinates[chosenRouteIndex]?.eta % 3600) / 60
+  // );
   const distance = (
     routesCoordinates[chosenRouteIndex]?.distance / 1000
   ).toFixed(2);
+
+  const shortestRouteIndex = routesCoordinates.reduce(
+    (prev, curr) => (prev.duration < curr.duration ? prev : curr),
+    routesCoordinates[0]
+  )?.index;
 
   const renderItem = useCallback(
     (item, index) => {
@@ -69,7 +77,7 @@ const BottomDrawer = ({
 
   return (
     <BottomSheet
-      onClose={handleClose}
+      onClose={() => handleClose}
       ref={bottomSheetRef}
       index={-1}
       backgroundStyle={{
@@ -87,7 +95,7 @@ const BottomDrawer = ({
         {startNavigation ? (
           <View className="flex-row flex items-center justify-between">
             <TouchableOpacity>
-              <Button mode="text" className="border-r">
+              <Button mode="text" onPress={handleClose} className="border-r">
                 <AntDesign
                   name="close"
                   size={24}
@@ -95,14 +103,26 @@ const BottomDrawer = ({
                 />
               </Button>
             </TouchableOpacity>
-            <View>
+            <View className="flex flex-col items-center">
               <StyledText className="text-2xl font-bold">
-                {hours ? `${hours} hr ` : ""} {minutes} min
+                {formatDuration(
+                  routesCoordinates[chosenRouteIndex]?.eta &&
+                    routesCoordinates[chosenRouteIndex]?.duration
+                    ? routesCoordinates[chosenRouteIndex]?.eta
+                    : routesCoordinates[chosenRouteIndex]?.duration
+                )}{" "}
+                {shortestRouteIndex === chosenRouteIndex && (
+                  <MaterialIcons name="eco" size={20} color="green" />
+                )}
               </StyledText>
               <StyledText>{distance} km</StyledText>
             </View>
             <TouchableOpacity>
-              <Button mode="text" className="border-r">
+              <Button
+                mode="text"
+                onPress={zoomOutToFitRoute}
+                className="border-r"
+              >
                 <MaterialIcons
                   name="alt-route"
                   size={24}

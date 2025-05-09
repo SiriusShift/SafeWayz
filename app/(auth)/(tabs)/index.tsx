@@ -26,12 +26,11 @@ import { useSocket } from "@/context/socketContext";
 const Index = () => {
   const theme = useTheme();
   const router = useRouter();
+  const type = SecureStore.getItem("vehicleType");
   const { showSnackbar } = useSnackbar();
   const { latestReport } = useSocket();
-  console.log(latestReport);
 
-  const type = SecureStore.getItem("vehicleType");
-  const snapPoints = ["35%", "50%", "85%"];
+  const snapPoints = ["18%", "45%", "85%"];
   const mapStyle = theme.dark ? nightMode : [];
 
   const [vehicleType, setVehicleType] = useState(null);
@@ -47,18 +46,17 @@ const Index = () => {
   const [trackedRoute, setTrackedRoute] = useState([]);
   const [remainingRoute, setRemainingRoute] = useState([]);
 
+  console.log(searchLocation)
+
   const mapRef = useRef(null);
   const bottomSheetRef = useRef(null);
-
-  console.log(speed)
+  const searchRef = useRef(null);
 
   const checkForAccidentsOnRoute = () => {
     if (!routesCoordinates?.length || !latestReport) return false;
     if (chosenRouteIndex == null && !startNavigation) return false;
 
-    const selectedRoute = startNavigation
-      ? routesCoordinates[0]
-      : routesCoordinates[chosenRouteIndex];
+    const selectedRoute = routesCoordinates[chosenRouteIndex];
 
     const routeLine = turf.lineString(
       selectedRoute.coordinates.map(({ longitude, latitude }) => [
@@ -75,6 +73,7 @@ const Index = () => {
       )
     );
   };
+  
 
   const startNavigationHandler = () => {
     const hasAccident = checkForAccidentsOnRoute();
@@ -107,8 +106,11 @@ const Index = () => {
 
   const handleClose = () => {
     bottomSheetRef.current?.close();
+    searchRef.current?.clear();
+    setSearchLocation(null);
+    setRoutesCoordinates([]);
+    setStartNavigation(false);
   };
-
   const handleModalClose = () => {
     setRoadModalVisible(false);
   };
@@ -128,6 +130,15 @@ const Index = () => {
     }
   };
 
+  const zoomOutToFitRoute = () => {
+    if (mapRef.current && location && searchLocation) {
+      mapRef.current.fitToCoordinates([location, searchLocation.location], {
+        edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+        animated: true,
+      });
+    }
+  };
+
   const { fetchRoutes } = useRouteNavigation({
     mapRef,
     searchLocation,
@@ -142,7 +153,7 @@ const Index = () => {
     showSnackbar,
     location,
     vehicleType,
-    speed
+    zoomOutToFitRoute,
   });
 
   const { startLocationUpdates, stopLocationUpdates } = useTrackLocation({
@@ -214,22 +225,23 @@ const Index = () => {
             routesCoordinates={routesCoordinates}
             searchLocation={searchLocation}
             trackedRoute={trackedRoute}
-            startNavigation={startNavigation}
+            // startNavigation={startNavigation}
             data={latestReport}
             remainingRoute={remainingRoute}
             chosenRouteIndex={chosenRouteIndex}
             setChosenRouteIndex={setChosenRouteIndex}
+            // startLocation={startLocation}
           />
         </MapView>
 
         <SearchBar
           mapRef={mapRef}
           bottomSheetRef={bottomSheetRef}
+          searchRef={searchRef}
           setSearchLocation={setSearchLocation}
           handleClose={handleClose}
-          setRoutesCoordinates={setRoutesCoordinates}
-          setStartNavigation={setStartNavigation}
           searchLocation={searchLocation}
+          location={location}
           mapReady={mapReady}
           theme={theme}
         />
@@ -258,6 +270,7 @@ const Index = () => {
           searchLocation={searchLocation}
           handleClose={handleClose}
           snapPoints={snapPoints}
+          zoomOutToFitRoute={zoomOutToFitRoute}
         />
 
         <Portal>
@@ -331,13 +344,13 @@ const styles = StyleSheet.create({
   },
   add: {
     position: "absolute",
-    bottom: 85,
+    bottom: 30,
     right: 20,
   },
 
   center: {
     position: "absolute",
-    bottom: 85,
+    bottom: 30,
     left: 20,
   },
 });
