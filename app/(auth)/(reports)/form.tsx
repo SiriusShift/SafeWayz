@@ -197,9 +197,9 @@ const ReportForm = () => {
 
             {/* Number of Vehicles Involved */}
             <View>
-              <StyledText>Number of Vehicles Involved</StyledText>
+              <StyledText>Number of Casualty</StyledText>
               <Controller
-                name="vehiclesNum"
+                name="casualty"
                 control={control}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
@@ -235,17 +235,7 @@ const ReportForm = () => {
             </View>
 
             {/* Injuries & Reported Toggles */}
-            <View className="flex flex-row justify-between">
-              <View className="flex flex-row items-center">
-                <StyledText>Injuries</StyledText>
-                <Controller
-                  name="injuries"
-                  control={control}
-                  render={({ field: { onChange, value } }) => (
-                    <Switch value={value || false} onValueChange={onChange} />
-                  )}
-                />
-              </View>
+            <View className="flex flex-row justify-start">
               <View className="flex flex-row items-center">
                 <StyledText>Notified</StyledText>
                 <Controller

@@ -66,8 +66,7 @@ export const reportFormSchema = {
     severity: yup.string().required("Severity is required"),
     description: yup.string().required("Description is required"),
     date: yup.date().required("Date is required"),
-    vehiclesNum: yup.number().required("Number of vehicles is required"),
-    injuries: yup.boolean().required("Injuries is required"),
+    casualty: yup.number().required("Casualty is required"),
     notified: yup.boolean().required("Notified is required"),
   }),
   defaultValues: {
@@ -76,7 +75,6 @@ export const reportFormSchema = {
     description: "",
     date: new Date(),
     vehiclesNum: 0,
-    injuries: false,
     notified: false
   }
 }
