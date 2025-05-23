@@ -30,7 +30,7 @@ const ReportForm = () => {
   const dispatch = useDispatch();
   const reportImages = useSelector((state: any) => state.reports);
   const location = useSelector((state: any) => state.user.location);
-  
+
   const {
     control,
     handleSubmit,
@@ -90,31 +90,20 @@ const ReportForm = () => {
                   onValueChange={onChange}
                   buttons={[
                     {
-                      label: "Low",
-                      value: "low",
+                      label: "Minor",
+                      value: "minor",
                       style:
-                        value === "low"
-                          ? { backgroundColor: theme.colors.primary }
-                          : {},
-                      labelStyle: value === "low" ? { color: "white" } : {},
+                        value === "minor" ? { backgroundColor: "yellow" } : {},
+                      labelStyle: value === "minor" ? { color: "black" } : {},
                     },
                     {
-                      label: "Medium",
-                      value: "medium",
+                      label: "Severe",
+                      value: "severe",
                       style:
-                        value === "medium"
+                        value === "severe"
                           ? { backgroundColor: theme.colors.primary }
                           : {},
-                      labelStyle: value === "medium" ? { color: "white" } : {},
-                    },
-                    {
-                      label: "High",
-                      value: "high",
-                      style:
-                        value === "high"
-                          ? { backgroundColor: theme.colors.primary }
-                          : {},
-                      labelStyle: value === "high" ? { color: "white" } : {},
+                      labelStyle: value === "severe" ? { color: "white" } : {},
                     },
                   ]}
                 />
@@ -129,11 +118,13 @@ const ReportForm = () => {
                 render={({ field: { onChange, value } }) => (
                   <Dropdown
                     data={[
-                      { title: "Collision" },
-                      { title: "Hit and run" },
-                      { title: "Overturned vehicle" },
-                      { title: "Road obstruction" },
-                      { title: "Other" },
+                      { title: "Vehicle Collision" },
+                      { title: "Motorcycle Accident" },
+                      { title: "Pedestrian Involved" },
+                      { title: "Weather-Related" },
+                      { title: "Mechanical Failure"}
+                      { title: "Obstruction/Hazard" },
+                      { title: "Reckless Driving" },
                     ]}
                     labelField="title"
                     valueField="title"
@@ -197,7 +188,7 @@ const ReportForm = () => {
 
             {/* Number of Vehicles Involved */}
             <View>
-              <StyledText>Number of Casualty</StyledText>
+              <StyledText>Casualty</StyledText>
               <Controller
                 name="casualty"
                 control={control}
@@ -208,7 +199,7 @@ const ReportForm = () => {
                     onChangeText={(text) =>
                       onChange(text.replace(/[^0-9]/g, ""))
                     }
-                    placeholder="Enter number of vehicles"
+                    placeholder="Enter number of casualty"
                     keyboardType="numeric"
                     style={{ height: 45 }}
                   />
