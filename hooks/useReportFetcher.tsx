@@ -22,7 +22,9 @@ export const useReportFetcher = () => {
             const result = await response.json();
             return {
               ...report,
-              geocode: result.features[0]?.text || "Unknown Location",
+              street: result.features[0]?.text || "Unknown Location",
+              barangay: result.features[0]?.context[1]?.text || "Unknown Barangay",
+              city: result.features[0]?.context[2]?.text || "Unknown City",
             };
           })
         );

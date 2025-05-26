@@ -2,22 +2,42 @@ import React from "react";
 import { Image } from "react-native";
 import { Marker, Polyline } from "react-native-maps";
 import DefaultAccident from "@/assets/images/accident_mark.png";
-import DefaultNotified from "@/assets/images/accident_mark_notified.png";
 import StartMarker from "@/assets/images/start_marker.png";
-
+import { useDispatch } from "react-redux";
+import { setActiveReport } from "@/features/active";
 const images = {
   car: require("@/assets/images/car.png"),
   motor: require("@/assets/images/motorbike.png"),
 };
 
 const reports = {
-  Collision: require("@/assets/images/collision_mark.png"),
-  "Hit and run": require("@/assets/images/hitnrun_mark.png"),
+  "Vehicle Collision": require("@/assets/images/collision_mark.png"),
+  "Motorcycle Accident": require("@/assets/images/motorcycle_mark.png"),
+  "Pedestrian Involved": require("@/assets/images/hitnrun_mark.png"),
+  "Weather Related": require("@/assets/images/weather_mark.png"),
+  "Mechanical Failure": require("@/assets/images/mechanical_mark.png"),
+  "Obstruction/Hazard": require("@/assets/images/obstruction_mark.png"),
+  "Reckless Driving": require("@/assets/images/reckless_mark.png"),
 };
 
-const reports_notified = {
-  Collision: require("@/assets/images/collision_mark_notified.png"),
-  "Hit and run": require("@/assets/images/hitrun_mark_notified.png"),
+const reports_closed = {
+  "Vehicle Collision": require("@/assets/images/collision_mark_closed.png"),
+  "Motorcycle Accident": require("@/assets/images/motorcycle_mark_closed.png"),
+  "Pedestrian Involved": require("@/assets/images/hitrun_mark_closed.png"),
+  "Weather Related": require("@/assets/images/weather_mark_closed.png"),
+  "Mechanical Failure": require("@/assets/images/mechanical_mark_closed.png"),
+  "Obstruction/Hazard": require("@/assets/images/obstruction_mark_closed.png"),
+  "Reckless Driving": require("@/assets/images/reckless_mark_closed.png"),
+};
+
+const reports_reported = {
+  "Vehicle Collision": require("@/assets/images/collision_mark_reported.png"),
+  "Motorcycle Accident": require("@/assets/images/motorcycle_mark_reported.png"),
+  "Pedestrian Involved": require("@/assets/images/hitrun_mark_reported.png"),
+  "Weather Related": require("@/assets/images/weather_mark_reported.png"),
+  "Mechanical Failure": require("@/assets/images/mechanical_mark_reported.png"),
+  "Obstruction/Hazard": require("@/assets/images/obstruction_mark_reported.png"),
+  "Reckless Driving": require("@/assets/images/reckless_mark_reported.png"),
 };
 
 const MapMarkers = ({
@@ -31,9 +51,17 @@ const MapMarkers = ({
   remainingRoute,
   chosenRouteIndex,
   setChosenRouteIndex,
+  setIsInfoOpen
   // startLocation,
 }) => {
-  console.log("report data", data);
+  const dispatch = useDispatch()
+
+  const onMarkerPress = (item) => {
+    console.log(item)
+    dispatch(setActiveReport(item));
+    setIsInfoOpen(true);
+  };
+
   return (
     <>
       {mapReady && location && (
@@ -132,15 +160,16 @@ const MapMarkers = ({
             }}
             title={item.name}
             description={item.vicinity}
+            onPress={() => onMarkerPress(item)}
           >
             <Image
               source={
                 item.type
-                  ? item.notified
-                    ? reports_notified[item.type]
+                  ? item.status === "Closed"
+                    ? reports_closed[item.type]
+                    : item.status === "Reported"
+                    ? reports_reported[item.type]
                     : reports[item.type]
-                  : item.notified
-                  ? DefaultNotified
                   : DefaultAccident
               }
               style={{ width: 35, height: 35, resizeMode: "contain" }}

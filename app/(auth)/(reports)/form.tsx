@@ -121,8 +121,8 @@ const ReportForm = () => {
                       { title: "Vehicle Collision" },
                       { title: "Motorcycle Accident" },
                       { title: "Pedestrian Involved" },
-                      { title: "Weather-Related" },
-                      { title: "Mechanical Failure"}
+                      { title: "Weather Related" },
+                      { title: "Mechanical Failure"},
                       { title: "Obstruction/Hazard" },
                       { title: "Reckless Driving" },
                     ]}

@@ -22,6 +22,7 @@ import StyledText from "@/components/StyledText";
 import useTrackLocation from "@/hooks/useTrackLocation";
 import * as turf from "@turf/turf";
 import { useSocket } from "@/context/socketContext";
+import ReportInfo from "@/components/map/ReportInfo";
 
 const Index = () => {
   const theme = useTheme();
@@ -34,6 +35,7 @@ const Index = () => {
   const mapStyle = theme.dark ? nightMode : [];
 
   const [vehicleType, setVehicleType] = useState(null);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [roadModalVisible, setRoadModalVisible] = useState(false);
   const [accidentModalVisible, setAccidentModalVisible] = useState(false);
   const [location, setLocation] = useState(null);
@@ -46,7 +48,7 @@ const Index = () => {
   const [trackedRoute, setTrackedRoute] = useState([]);
   const [remainingRoute, setRemainingRoute] = useState([]);
 
-  console.log(searchLocation)
+  console.log(searchLocation);
 
   const mapRef = useRef(null);
   const bottomSheetRef = useRef(null);
@@ -73,7 +75,6 @@ const Index = () => {
       )
     );
   };
-  
 
   const startNavigationHandler = () => {
     const hasAccident = checkForAccidentsOnRoute();
@@ -162,7 +163,7 @@ const Index = () => {
     mapRef,
     mapReady,
     setSpeed,
-    startNavigation
+    startNavigation,
   });
 
   const reRouteNavigation = () => {
@@ -224,6 +225,7 @@ const Index = () => {
             vehicleType={vehicleType}
             routesCoordinates={routesCoordinates}
             searchLocation={searchLocation}
+            setIsInfoOpen={setIsInfoOpen}
             trackedRoute={trackedRoute}
             // startNavigation={startNavigation}
             data={latestReport}
@@ -250,13 +252,18 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={() => router.push("/(auth)/(reports)")}
+          onPress={() => snapToRoad()}
         />
 
         <FAB
           style={[styles.center, { backgroundColor: theme.colors.background }]}
           icon="crosshairs-gps"
           onPress={centerMap}
+        />
+
+        <ReportInfo
+          isInfoOpen={isInfoOpen}
+          setIsInfoOpen={setIsInfoOpen}
         />
 
         <BottomDrawer
@@ -287,7 +294,10 @@ const Index = () => {
                 We couldn't detect a nearby road. Please check your location or
                 try again.
               </StyledText>
-              <Button mode="contained" onPress={() => setRoadModalVisible(false)}>
+              <Button
+                mode="contained"
+                onPress={() => setRoadModalVisible(false)}
+              >
                 <Text>Close</Text>
               </Button>
             </View>
