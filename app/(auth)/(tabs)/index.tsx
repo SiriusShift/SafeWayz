@@ -8,7 +8,7 @@ import {
 import React, { useEffect, useState, useRef } from "react";
 import { Button, Modal, Portal } from "react-native-paper";
 import { FAB, useTheme } from "react-native-paper";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { PROVIDER_GOOGLE, Heatmap } from "react-native-maps";
 import nightMode from "@/utils/nightMap.json";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import * as SecureStore from "expo-secure-store";
@@ -23,13 +23,24 @@ import useTrackLocation from "@/hooks/useTrackLocation";
 import * as turf from "@turf/turf";
 import { useSocket } from "@/context/socketContext";
 import ReportInfo from "@/components/map/ReportInfo";
+import moment from "moment";
 
 const Index = () => {
   const theme = useTheme();
   const router = useRouter();
   const type = SecureStore.getItem("vehicleType");
   const { showSnackbar } = useSnackbar();
-  const { latestReport } = useSocket();
+  const { latestReport: allReports } = useSocket();
+  const nowUtc = moment.utc();
+  const twelveHoursAgoUtc = nowUtc.clone().subtract(12, "hours");
+
+  const latestReport = allReports.filter((report) =>
+    moment.utc(report.createdAt).isAfter(twelveHoursAgoUtc)
+  );
+
+  const pastReports = allReports.filter(
+    (report) => !latestReport.includes(report)
+  );
 
   const snapPoints = ["18%", "45%", "85%"];
   const mapStyle = theme.dark ? nightMode : [];
@@ -211,6 +222,9 @@ const Index = () => {
           showsTraffic={!startNavigation && true}
           showsCompass={false}
           customMapStyle={mapStyle}
+          // zoomControlEnabled
+          loadingEnabled
+          toolbarEnabled={false}
           onMapReady={() => setMapReady(true)}
           initialRegion={{
             latitude: 15.16, // Angeles City latitude
@@ -234,6 +248,16 @@ const Index = () => {
             setChosenRouteIndex={setChosenRouteIndex}
             // startLocation={startLocation}
           />
+          {pastReports && <Heatmap
+          points={pastReports}
+          radius={10}
+          opacity={1}
+          gradient={{
+            colors: ['#00FFFF', '#0000FF', '#FF0000'],
+            startPoints: [0.1, 0.5, 1],
+            colorMapSize: 256,
+          }}
+        />}
         </MapView>
 
         <SearchBar
@@ -261,10 +285,7 @@ const Index = () => {
           onPress={centerMap}
         />
 
-        <ReportInfo
-          isInfoOpen={isInfoOpen}
-          setIsInfoOpen={setIsInfoOpen}
-        />
+        <ReportInfo isInfoOpen={isInfoOpen} setIsInfoOpen={setIsInfoOpen} />
 
         <BottomDrawer
           bottomSheetRef={bottomSheetRef}

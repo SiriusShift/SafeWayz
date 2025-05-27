@@ -158,8 +158,8 @@ const MapMarkers = ({
               latitude: item.latitude,
               longitude: item.longitude,
             }}
-            title={item.name}
-            description={item.vicinity}
+            // title={item.name}
+            // description={item.vicinity}
             onPress={() => onMarkerPress(item)}
           >
             <Image
