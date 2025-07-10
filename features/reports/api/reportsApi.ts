@@ -16,8 +16,16 @@ const reportsApi = api.enhanceEndpoints({addTagTypes: ['Report']}).injectEndpoin
                 method: "GET",
             }),
             providesTags: ['Report'],
-        })
+        }),
+        getReportsBarGraph: builder.query({
+            query: (params) => ({
+                url: "/reports/severity-trend",
+                method: "GET",
+                params
+            }),
+            providesTags: ['Report'],
+        }),
     }),
 });
 
-export const {useCreateReportMutation, useGetReportsQuery} = reportsApi
+export const {useCreateReportMutation, useGetReportsQuery, useGetReportsBarGraphQuery} = reportsApi

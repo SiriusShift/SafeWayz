@@ -41,8 +41,10 @@ const useTrackLocation = ({ setLocation, showSnackbar, mapRef, mapReady, setSpee
       locationSubscription.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 1000,
-          distanceInterval: 2,
+          // timeInterval: 1000,
+          // distanceInterval: 2,
+          timeInterval: 3000,
+          distanceInterval: 5,
         },
         (newLocation) => {
           console.log(newLocation);

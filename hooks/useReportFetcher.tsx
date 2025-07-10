@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
+import { Report, ReportsState } from "@/types/types";
+import { extractLocationDetails } from "@/utils/customFunction";
 
 export const useReportFetcher = () => {
-  const { data, isLoading } = useGetReportsQuery();
-  const [reports, setReports] = useState([]);
+  const { data, isLoading } = useGetReportsQuery({});
+  const [reports, setReports] = useState<ReportsState>({
+    latestReports: [],
+    pastReports: [],
+  });
 
   useEffect(() => {
     if (!data) return;
@@ -11,27 +16,25 @@ export const useReportFetcher = () => {
     const fetchGeocodeData = async () => {
       try {
         const geocodedReports = await Promise.all(
-          data?.data.map(async (report) => {
+          data?.data.latestReports?.map(async (report: Report) => {
             const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${
-                report.longitude
-              },${report.latitude}.json?access_token=${
-                process.env.EXPO_PUBLIC_MAPBOX_KEY
-              }`
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data.latitude},${data.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`
             );
             const result = await response.json();
+            const location = extractLocationDetails(result?.results || []);
             return {
               ...report,
-              street: result.features[0]?.text || "Unknown Location",
-              barangay: result.features[0]?.context[1]?.text || "Unknown Barangay",
-              city: result.features[0]?.context[2]?.text || "Unknown City",
+              street: location.street,
+              barangay: location.barangay,
+              city: location.city,
             };
           })
         );
 
-        console.log(geocodedReports)
-
-        setReports(geocodedReports);
+        setReports({
+          latestReports: [...geocodedReports],
+          pastReports: [...data?.data?.pastReports],
+        });
       } catch (error) {
         console.error("Error fetching geocode data:", error);
       }

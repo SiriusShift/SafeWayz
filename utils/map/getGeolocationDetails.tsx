@@ -1,3 +1,5 @@
+import { extractLocationDetails } from "../customFunction";
+
 // Create a cache object at module level
 const geocodeCache = {};
 
@@ -17,18 +19,21 @@ export const fetchGeocodeData = async (data) => {
   // Fetch from API if not cached
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${data.longitude},${
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${
         data.latitude
-      }.json?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`
+      },${data.longitude}&key=${
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
+      }`
     );
-    
     const result = await response.json();
+    const location = extractLocationDetails(result?.results || []);
+
     
     // Store only the geocoded fields in cache
     geocodeCache[cacheKey] = {
-      street: result.features[0]?.text || "Unknown Location",
-      barangay: result.features[0]?.context[1]?.text || "Unknown Barangay",
-      city: result.features[0]?.context[2]?.text || "Unknown City",
+      street: location.street,
+      barangay: location.barangay,
+      city: location.city,
     };
     
     // Return the full geocoded object

@@ -9,9 +9,9 @@ const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { reports, isLoading, setReports } = useReportFetcher();
-  const [latestReport, setLatestReport] = useState(reports);
-  console.log(latestReport);
+  const [allReports, setAllReports] = useState(reports);
   const dispatch = useDispatch();
+  console.log("reports", reports);
 
   useEffect(() => {
     const handleNewReport = async (data) => {
@@ -21,7 +21,10 @@ export const SocketProvider = ({ children }) => {
         const geocoded = await fetchGeocodeData(data);
 
         // setReports((prev) => [geocoded, ...prev]); // prepend to reports
-        setLatestReport((prev) => [geocoded, ...prev]);
+        setAllReports({
+          latestReports: [geocoded, ...reports?.latestReports],
+          pastReports: [...reports?.pastReports],
+        }); 
         // dispatch(reportsApi.util.invalidateTags(["Table Report"]));
       } catch (error) {
         console.error("Error geocoding socket data:", error);
@@ -39,12 +42,12 @@ export const SocketProvider = ({ children }) => {
     };
   }, [setReports]);
 
-  useEffect(() =>{
-    setLatestReport(reports);
-  }, [reports])
+  useEffect(() => {
+    setAllReports(reports);
+  }, [reports]);
 
   return (
-    <SocketContext.Provider value={{ isLoading, latestReport }}>
+    <SocketContext.Provider value={{ isLoading, allReports }}>
       {children}
     </SocketContext.Provider>
   );

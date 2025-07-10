@@ -99,7 +99,7 @@ const BottomDrawer = ({
                 <AntDesign
                   name="close"
                   size={24}
-                  color={theme.colors.onPrimary}
+                  color={theme.colors.onSurface}
                 />
               </Button>
             </TouchableOpacity>
@@ -126,7 +126,7 @@ const BottomDrawer = ({
                 <MaterialIcons
                   name="alt-route"
                   size={24}
-                  color={theme.colors.onPrimary}
+                  color={theme.colors.onSurface}
                 />
               </Button>
             </TouchableOpacity>

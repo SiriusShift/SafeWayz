@@ -21,6 +21,8 @@ const useRouteNavigation = ({
   vehicleType,
   refetch,
   zoomOutToFitRoute,
+  checkForAccidentsOnRoute,
+  setAccidentCount
 }) => {
   const lastClosestIndexRef = useRef(0);
 
@@ -256,6 +258,10 @@ const useRouteNavigation = ({
         closestIndex + 1
       );
 
+      const accident = checkForAccidentsOnRoute();
+      if(accident.past > 0 || accident.latest > 0){
+        setAccidentCount(accident?.past + accident?.latest);
+      }
       setTrackedRoute(newTrackedRoute);
       setRemainingRoute(newRemainingRoute);
     }

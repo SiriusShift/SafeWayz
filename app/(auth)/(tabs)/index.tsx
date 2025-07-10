@@ -24,24 +24,17 @@ import * as turf from "@turf/turf";
 import { useSocket } from "@/context/socketContext";
 import ReportInfo from "@/components/map/ReportInfo";
 import moment from "moment";
+import AccidentIndicator from "@/components/map/AccidentIndicator";
+import { set } from "react-hook-form";
 
 const Index = () => {
   const theme = useTheme();
   const router = useRouter();
   const type = SecureStore.getItem("vehicleType");
   const { showSnackbar } = useSnackbar();
-  const { latestReport: allReports } = useSocket();
-  const nowUtc = moment.utc();
-  const twelveHoursAgoUtc = nowUtc.clone().subtract(12, "hours");
+  const { allReports } = useSocket();
 
-  const latestReport = allReports.filter((report) =>
-    moment.utc(report.createdAt).isAfter(twelveHoursAgoUtc)
-  );
-
-  const pastReports = allReports.filter(
-    (report) => !latestReport.includes(report)
-  );
-
+  console.log("all reports", allReports);
   const snapPoints = ["18%", "45%", "85%"];
   const mapStyle = theme.dark ? nightMode : [];
 
@@ -49,6 +42,8 @@ const Index = () => {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [roadModalVisible, setRoadModalVisible] = useState(false);
   const [accidentModalVisible, setAccidentModalVisible] = useState(false);
+  const [pastAccidentModalVisible, setPastAccidentModalVisible] =
+    useState(false);
   const [location, setLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [routesCoordinates, setRoutesCoordinates] = useState([]);
@@ -57,6 +52,7 @@ const Index = () => {
   const [speed, setSpeed] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [trackedRoute, setTrackedRoute] = useState([]);
+  const [accidentCount, setAccidentCount] = useState(false);
   const [remainingRoute, setRemainingRoute] = useState([]);
 
   console.log(searchLocation);
@@ -66,10 +62,15 @@ const Index = () => {
   const searchRef = useRef(null);
 
   const checkForAccidentsOnRoute = () => {
-    if (!routesCoordinates?.length || !latestReport) return false;
-    if (chosenRouteIndex == null && !startNavigation) return false;
+    if (!routesCoordinates?.length || !allReports) return 0;
+    if (chosenRouteIndex == null && !startNavigation) return 0;
 
-    const selectedRoute = routesCoordinates[chosenRouteIndex];
+    let selectedRoute;
+    if (startNavigation) {
+      selectedRoute = remainingRoute;
+    } else {
+      selectedRoute = routesCoordinates[chosenRouteIndex];
+    }
 
     const routeLine = turf.lineString(
       selectedRoute.coordinates.map(({ longitude, latitude }) => [
@@ -79,18 +80,39 @@ const Index = () => {
     );
     const buffered = turf.buffer(routeLine, 0.05, { units: "kilometers" });
 
-    return latestReport.some((r) =>
+    const latestCount = allReports?.latestReports.filter((r) =>
       turf.booleanPointInPolygon(
         turf.point([r.longitude, r.latitude]),
         buffered
       )
-    );
+    ).length;
+
+    const pastCount = allReports?.pastReports.filter((r) =>
+      turf.booleanPointInPolygon(
+        turf.point([r.longitude, r.latitude]),
+        buffered
+      )
+    ).length;
+
+    if (latestCount > 0 && startNavigation) {
+      setAccidentModalVisible(true);
+    }
+
+    return {
+      latest: latestCount,
+      past: pastCount,
+    };
   };
 
   const startNavigationHandler = () => {
     const hasAccident = checkForAccidentsOnRoute();
-    if (hasAccident) {
+    if (hasAccident?.latest > 0) {
       setAccidentModalVisible(true);
+      setAccidentCount(hasAccident?.latest + hasAccident?.past);
+      return;
+    } else if (hasAccident?.past > 0) {
+      setPastAccidentModalVisible(true);
+      setAccidentCount(hasAccident?.latest + hasAccident?.past);
       return;
     }
     proceedWithNavigation();
@@ -100,6 +122,7 @@ const Index = () => {
     setStartNavigation(true);
     // setRoutesCoordinates([routesCoordinates[chosenRouteIndex]]);
     setAccidentModalVisible(false);
+    setPastAccidentModalVisible(false);
   };
 
   const snapToRoad = async () => {
@@ -122,9 +145,12 @@ const Index = () => {
     setSearchLocation(null);
     setRoutesCoordinates([]);
     setStartNavigation(false);
+    setAccidentCount(0);
   };
   const handleModalClose = () => {
     setRoadModalVisible(false);
+    setAccidentModalVisible(false);
+    setPastAccidentModalVisible(false);
   };
 
   const centerMap = () => {
@@ -166,6 +192,8 @@ const Index = () => {
     location,
     vehicleType,
     zoomOutToFitRoute,
+    checkForAccidentsOnRoute,
+    setAccidentCount,
   });
 
   const { startLocationUpdates, stopLocationUpdates } = useTrackLocation({
@@ -202,17 +230,20 @@ const Index = () => {
   }, [type]);
 
   useEffect(() => {
-    if (latestReport && startNavigation) {
+    if (allReports && startNavigation) {
       startNavigationHandler();
     }
-  }, [latestReport]);
+  }, [allReports]);
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View
         style={[
           styles.container,
-          { backgroundColor: theme.dark ? "#333" : "#fff" },
+          {
+            backgroundColor: theme.dark ? "#333" : "#fff",
+            position: "relative",
+          },
         ]}
       >
         <MapView
@@ -242,22 +273,31 @@ const Index = () => {
             setIsInfoOpen={setIsInfoOpen}
             trackedRoute={trackedRoute}
             // startNavigation={startNavigation}
-            data={latestReport}
+            data={allReports?.latestReports}
             remainingRoute={remainingRoute}
             chosenRouteIndex={chosenRouteIndex}
             setChosenRouteIndex={setChosenRouteIndex}
             // startLocation={startLocation}
           />
-          {pastReports && <Heatmap
-          points={pastReports}
-          radius={10}
-          opacity={1}
-          gradient={{
-            colors: ['#00FFFF', '#0000FF', '#FF0000'],
-            startPoints: [0.1, 0.5, 1],
-            colorMapSize: 256,
-          }}
-        />}
+          {allReports?.pastReports.length > 0 && (
+            <Heatmap
+              points={allReports?.pastReports}
+              radius={10}
+              opacity={0.8}
+              gradient={{
+                colors: [
+                  "rgba(0, 0, 255, 0)", // transparent blue
+                  "blue",
+                  "cyan",
+                  "lime",
+                  "yellow",
+                  "red",
+                ],
+                startPoints: [0, 0.1, 0.3, 0.5, 0.7, 1],
+                colorMapSize: 256,
+              }}
+            />
+          )}
         </MapView>
 
         <SearchBar
@@ -276,7 +316,7 @@ const Index = () => {
           style={[styles.add, { backgroundColor: "red" }]}
           icon="alert"
           color="white"
-          onPress={() => snapToRoad()}
+          onPress={() => router.push("/(auth)/(reports)")}
         />
 
         <FAB
@@ -284,6 +324,8 @@ const Index = () => {
           icon="crosshairs-gps"
           onPress={centerMap}
         />
+
+        {(accidentCount > 0 && startNavigation) && <AccidentIndicator count={accidentCount} />}
 
         <ReportInfo isInfoOpen={isInfoOpen} setIsInfoOpen={setIsInfoOpen} />
 
@@ -334,6 +376,38 @@ const Index = () => {
               <Text className="text-2xl font-bold mb-4">Accident Detected</Text>
               <Text className="text-base mb-4">
                 We detected an accident on your route. Do you want to{" "}
+                {startNavigation ? "re-route" : "continue"}?
+              </Text>
+              <View className="flex flex-row gap-5">
+                <Button mode="outlined" onPress={() => handleModalClose()}>
+                  <Text>Close</Text>
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() =>
+                    startNavigation
+                      ? reRouteNavigation()
+                      : proceedWithNavigation()
+                  }
+                >
+                  <Text>{startNavigation ? "Re-route" : "Continue"}</Text>
+                </Button>
+              </View>
+            </View>
+          </Modal>
+        </Portal>
+        <Portal>
+          <Modal
+            visible={pastAccidentModalVisible}
+            onDismiss={() => setPastAccidentModalVisible(false)}
+            contentContainerStyle={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <Text className="text-2xl font-bold mb-4">
+                Accident Prone Area
+              </Text>
+              <Text className="text-base mb-4">
+                System detected multiple accidents in the past. Do you want to{" "}
                 {startNavigation ? "re-route" : "continue"}?
               </Text>
               <View className="flex flex-row gap-5">
