@@ -145,7 +145,7 @@ const useRouteNavigation = ({
 
   const refreshAllRouteMetrics = async () => {
     const updated = await Promise.all(
-      routesCoordinates.map(async (route, index) => {
+      routesCoordinates?.map(async (route, index) => {
         const update = await refreshRouteEta(route.routeToken);
         console.log("update", update);
         return {

@@ -55,7 +55,7 @@ const Vehicle = () => {
 
   return (
     <StyledView className="flex-1 gap-5 p-10">
-      {vehicleType.map((item) => (
+      {vehicleType?.map((item) => (
         <View
           key={item.id}
           onTouchEnd={() => setVehicle(item)}

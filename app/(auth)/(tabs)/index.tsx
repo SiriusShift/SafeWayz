@@ -73,7 +73,7 @@ const Index = () => {
     }
 
     const routeLine = turf.lineString(
-      selectedRoute.coordinates.map(({ longitude, latitude }) => [
+      selectedRoute.coordinates?.map(({ longitude, latitude }) => [
         longitude,
         latitude,
       ])
@@ -249,7 +249,7 @@ const Index = () => {
         <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
-          style={styles.map}
+          style={styles?.map}
           showsTraffic={!startNavigation && true}
           showsCompass={false}
           customMapStyle={mapStyle}
