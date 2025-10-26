@@ -70,7 +70,7 @@ const Graph = () => {
     location: barangay
   });
 
-  const barData = data?.data.map((reports) => ({
+  const barData = data?.data?.map((reports) => ({
     ...reports,
     frontColor:
       reports?.label === dateToday[dateMode.value]

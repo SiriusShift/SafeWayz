@@ -154,7 +154,7 @@ const BottomDrawer = ({
               }}
               style={{ marginVertical: 10 }}
             >
-              {routesCoordinates.map(renderItem)}
+              {routesCoordinates?.map(renderItem)}
             </BottomSheetScrollView>
           </>
         )}

@@ -168,7 +168,7 @@ const useRouteNavigation = ({
     const selectedRoute = routesCoordinates[chosenRouteIndex];
 
     const routeLine = turf.lineString(
-      selectedRoute.coordinates.map(({ longitude, latitude }) => [
+      selectedRoute.coordinates?.map(({ longitude, latitude }) => [
         longitude,
         latitude,
       ])
