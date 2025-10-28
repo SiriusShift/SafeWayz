@@ -1,7 +1,7 @@
 export default {
   expo: {
     name: "PathAlert",
-    slug: "path-alert",
+    slug: "pathalert",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -52,12 +52,12 @@ export default {
         origin: false,
       },
       eas: {
-        projectId: "00995566-e432-43bc-9f33-dbae9115e4aa",
+        projectId: "3947b6ed-424f-41b4-bfdb-2db8cc5f4b9c",
       },
     },
     updates: {
       url: "https://u.expo.dev/e6a7a504-7312-4b04-957b-1abed85dd023",
     },
-    owner: "charlesamiel01",
+    owner: "charlesamiel1",
   },
 };
