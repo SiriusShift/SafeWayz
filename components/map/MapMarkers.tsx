@@ -84,7 +84,7 @@ const MapMarkers = ({
         </>
       )}
       {mapReady &&
-        routesCoordinates.map((route, index) => {
+        routesCoordinates?.map((route, index) => {
           console.log(route);
           const isChosen = index === chosenRouteIndex;
           const zIndex = isChosen ? routesCoordinates.length + 1 : index;
