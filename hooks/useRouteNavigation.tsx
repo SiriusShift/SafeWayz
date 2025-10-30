@@ -80,8 +80,8 @@ const useRouteNavigation = ({
       console.log("data of route", data);
 
       if (data.routes) {
-        const routesWithDetails = processGoogleRoutes(data.routes);
-        const shortestRouteIndex = routesWithDetails.reduce(
+        const routesWithDetails = processGoogleRoutes(data?.routes);
+        const shortestRouteIndex = routesWithDetails?.reduce(
           (prev, curr) => (prev.duration < curr.duration ? prev : curr),
           routesWithDetails[0]
         ).index;
@@ -158,17 +158,19 @@ const useRouteNavigation = ({
         };
       })
     );
+    console.log(updated, 'updated')
     setRoutesCoordinates(updated);
   };
 
   const checkInRoute = () => {
+    console.log(routesCoordinates)
     if (!routesCoordinates?.length) return false;
     if (chosenRouteIndex == null && !startNavigation) return false;
 
     const selectedRoute = routesCoordinates[chosenRouteIndex];
 
     const routeLine = turf.lineString(
-      selectedRoute.coordinates?.map(({ longitude, latitude }) => [
+      selectedRoute?.coordinates?.map(({ longitude, latitude }) => [
         longitude,
         latitude,
       ])
@@ -191,7 +193,7 @@ const useRouteNavigation = ({
   useEffect(() => {
     if (
       chosenRouteIndex !== null &&
-      routesCoordinates.length > 0 &&
+      routesCoordinates?.length > 0 &&
       routesCoordinates[chosenRouteIndex]?.coordinates &&
       location
     ) {
@@ -225,11 +227,11 @@ const useRouteNavigation = ({
   useEffect(() => {
     if (
       chosenRouteIndex !== null &&
-      routesCoordinates.length > 0 &&
+      routesCoordinates?.length > 0 &&
       location &&
       startNavigation &&
       routesCoordinates[chosenRouteIndex]?.coordinates &&
-      trackedRoute.length > 0 // Only update if we already have a tracked route
+      trackedRoute?.length > 0 // Only update if we already have a tracked route
     ) {
       //Update Route
       refreshAllRouteMetrics();

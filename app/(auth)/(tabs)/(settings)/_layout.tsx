@@ -47,7 +47,7 @@ const SettingsLayout = () => {
 
   useFocusEffect(
     useCallback(() => {
-      const currentRoute = segments?.[segments.length - 1] || "index";
+      const currentRoute = segments?.[segments?.length - 1] || "index";
       setTitle(routeTitles[currentRoute] || "Settings");
     }, [segments])
   );
@@ -61,11 +61,11 @@ const SettingsLayout = () => {
         ]}
         className="flex justify-between"
       >
-        {segments[segments.length - 1] !== "(settings)" && (
+        {segments[segments?.length - 1] !== "(settings)" && (
           <Appbar.BackAction onPress={() => router.replace("/(auth)/(tabs)")} />
         )}
         <Appbar.Content titleStyle={{ fontSize: 20 }} title={title} />
-        {segments[segments.length - 1] === "(settings)" && (
+        {segments[segments?.length - 1] === "(settings)" && (
           <Appbar.Action icon="logout" onPress={() => handleLogout()} />
         )}
       </Appbar.Header>

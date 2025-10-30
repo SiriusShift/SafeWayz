@@ -78,7 +78,9 @@
     "socket.io-client": "^4.7.2",
     "tailwindcss": "^3.4.17",
     "tmp": "^0.2.5",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "react-native-svg": "15.8.0",
+    "expo-dev-client": "~5.0.20"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

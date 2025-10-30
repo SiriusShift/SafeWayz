@@ -55,7 +55,8 @@ const Index = () => {
   const [accidentCount, setAccidentCount] = useState(false);
   const [remainingRoute, setRemainingRoute] = useState([]);
 
-  console.log(searchLocation);
+  console.log(routesCoordinates, "route coordinates");
+  console.log(trackedRoute, "tracked routes")
 
   const mapRef = useRef(null);
   const bottomSheetRef = useRef(null);
@@ -72,6 +73,9 @@ const Index = () => {
       selectedRoute = routesCoordinates[chosenRouteIndex];
     }
 
+      if (!selectedRoute?.coordinates?.length) return { latest: 0, past: 0 };
+
+
     const routeLine = turf.lineString(
       selectedRoute.coordinates?.map(({ longitude, latitude }) => [
         longitude,
@@ -80,19 +84,19 @@ const Index = () => {
     );
     const buffered = turf.buffer(routeLine, 0.05, { units: "kilometers" });
 
-    const latestCount = allReports?.latestReports.filter((r) =>
+    const latestCount = allReports?.latestReports?.filter((r) =>
       turf.booleanPointInPolygon(
         turf.point([r.longitude, r.latitude]),
         buffered
       )
-    ).length;
+    )?.length;
 
-    const pastCount = allReports?.pastReports.filter((r) =>
+    const pastCount = allReports?.pastReports?.filter((r) =>
       turf.booleanPointInPolygon(
         turf.point([r.longitude, r.latitude]),
         buffered
       )
-    ).length;
+    )?.length;
 
     if (latestCount > 0 && startNavigation) {
       setAccidentModalVisible(true);
@@ -279,7 +283,7 @@ const Index = () => {
             setChosenRouteIndex={setChosenRouteIndex}
             // startLocation={startLocation}
           />
-          {allReports?.pastReports.length > 0 && (
+          {allReports?.pastReports?.length > 0 && (
             <Heatmap
               points={allReports?.pastReports}
               radius={10}

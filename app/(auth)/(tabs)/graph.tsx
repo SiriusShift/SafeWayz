@@ -210,7 +210,7 @@ const Graph = () => {
                 flexDirection: "row",
                 alignItems: "center",
                 paddingVertical: 8,
-                borderBottomWidth: index < barData.length - 1 ? 1 : 0,
+                borderBottomWidth: index < barData?.length - 1 ? 1 : 0,
                 borderBottomColor: theme.colors.outline + "20",
               }}
             >

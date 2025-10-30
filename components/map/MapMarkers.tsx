@@ -87,7 +87,7 @@ const MapMarkers = ({
         routesCoordinates?.map((route, index) => {
           console.log(route);
           const isChosen = index === chosenRouteIndex;
-          const zIndex = isChosen ? routesCoordinates.length + 1 : index;
+          const zIndex = isChosen ? routesCoordinates?.length + 1 : index;
 
           return (
             <React.Fragment key={index}>

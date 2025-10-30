@@ -4,7 +4,7 @@ export const decodePolyline = (encoded) => {
     lat = 0,
     lng = 0;
 
-  while (index < encoded.length) {
+  while (index < encoded?.length) {
     let b,
       shift = 0,
       result = 0;

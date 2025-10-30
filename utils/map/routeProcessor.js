@@ -7,7 +7,7 @@ export const processGoogleRoutes = (rawRoutes) => {
     const coordinates = decodePolyline(route.polyline.encodedPolyline);
     const duration = parseInt(route.duration.replace("s", ""), 10) ?? Infinity;
     const distance = route.distanceMeters ?? Infinity;
-    const midIndex = Math.floor(coordinates.length / 2);
+    const midIndex = Math.floor(coordinates?.length / 2);
     const midPoint = coordinates[midIndex];
     const routeToken = route.routeToken;
 
