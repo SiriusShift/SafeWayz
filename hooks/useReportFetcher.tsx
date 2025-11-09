@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useGetReportsQuery } from "@/features/reports/api/reportsApi";
 import { Report, ReportsState } from "@/types/types";
-import { extractLocationDetails } from "@/utils/customFunction";
+import { fetchGeocodeData } from "@/utils/map/getGeolocationDetails";
 
 export const useReportFetcher = () => {
   const { data, isLoading } = useGetReportsQuery({});
@@ -13,15 +13,19 @@ export const useReportFetcher = () => {
   useEffect(() => {
     if (!data) return;
 
-    const fetchGeocodeData = async () => {
+    const fetchData = async () => {
       try {
         const geocodedReports = await Promise.all(
           data?.data.latestReports?.map(async (report: Report) => {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data.latitude},${data.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`
-            );
-            const result = await response.json();
-            const location = extractLocationDetails(result?.results || []);
+            // const response = await fetch(
+            //   `https://maps.googleapis.com/maps/api/geocode/json?latlng=${report.latitude
+            //   },${report.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_API
+            //   }`
+            // );
+            // const result = await response.json();
+            // console.log(result, "fetched result")
+            const location = await fetchGeocodeData(report || []);
+            console.log(location, "location fetched")
             return {
               ...report,
               street: location.street,
@@ -30,6 +34,8 @@ export const useReportFetcher = () => {
             };
           })
         );
+        
+        console.log(geocodedReports, 'geocoded reports')
 
         setReports({
           latestReports: [...geocodedReports],
@@ -40,7 +46,7 @@ export const useReportFetcher = () => {
       }
     };
 
-    fetchGeocodeData();
+    fetchData();
   }, [data]);
 
   return { reports, isLoading, setReports };

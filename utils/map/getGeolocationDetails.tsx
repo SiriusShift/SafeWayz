@@ -22,11 +22,13 @@ export const fetchGeocodeData = async (data) => {
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${
         data.latitude
       },${data.longitude}&key=${
-        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
+        process.env.EXPO_PUBLIC_GOOGLE_API
       }`
     );
     const result = await response.json();
-    const location = extractLocationDetails(result?.results || []);
+    const location = await extractLocationDetails(result?.results || []);
+
+    console.log(location, "location")
 
     
     // Store only the geocoded fields in cache

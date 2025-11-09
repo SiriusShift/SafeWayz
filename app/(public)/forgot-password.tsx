@@ -93,7 +93,7 @@ const ForgotPassword = () => {
       showSnackbar("Reset Password Successful!", 3000, "success");
     } catch (err) {
       showSnackbar(
-        err?.data?.message || "Reset Password Failed. Please Try Again",
+        (err?.data?.message || "Reset Password Failed. Please Try Again" || err?.message),
         3000,
         "danger"
       );
