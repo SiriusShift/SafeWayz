@@ -22,9 +22,9 @@ export const SocketProvider = ({ children }) => {
 
         // setReports((prev) => [geocoded, ...prev]); // prepend to reports
         setAllReports({
-          latestReports: [geocoded, ...reports?.latestReports],
-          pastReports: [...reports?.pastReports],
-        }); 
+          latestReports: [geocoded, ...(reports?.latestReports ?? [])],
+          pastReports: [...(reports?.pastReports ?? [])],
+        });
         // dispatch(reportsApi.util.invalidateTags(["Table Report"]));
       } catch (error) {
         console.error("Error geocoding socket data:", error);

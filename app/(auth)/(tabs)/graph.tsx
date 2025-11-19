@@ -67,7 +67,7 @@ const Graph = () => {
     mode: dateMode.value,
     dateFrom: date?.from,
     dateTo: date?.to,
-    location: barangay
+    location: barangay,
   });
 
   const barData = data?.data?.map((reports) => ({
@@ -174,9 +174,15 @@ const Graph = () => {
             Bar Chart {barangay && `(${barangay})`}
           </StyledText>
           <StyledText>
-            Weekly Accident Reports ({moment().startOf("week").format("MMM DD")}{" "}
-            - {moment().endOf("week").format("MMM DD")})
+            {dateMode?.name} Accident Reports (
+            {dateMode?.value === "week"
+              ? `${moment().startOf("week").format("MMM DD")} - ${moment()
+                  .endOf("week")
+                  .format("MMM DD")}`
+              : moment().startOf(dateMode?.value).format("MMM DD")}
+            )
           </StyledText>
+
           <StyledText></StyledText>
         </View>
 

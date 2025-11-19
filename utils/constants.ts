@@ -10,7 +10,7 @@ export const locationData = [
   { name: "Lourdes North West" },
   { name: "Lourdes Sur" },
   { name: "Lourdes Sur East" },
-  { name: "Malabanias" },
+  { name: "Malabañas" },
   { name: "Margot" },
   { name: "Ninoy Aquino (Marisol)" },
   { name: "Mining" },
@@ -34,8 +34,15 @@ export const locationData = [
 ];
 
 export const mode = [
-  { name: "Daily", value: "day"},
-  { name: "Weekly", value: "week"},
-  { name: "Monthly", value: "month"},
-  { name: "Yearly", value: "year"},
-]
+  { name: "Daily", value: "day", format: "YYYY-MM-DD" },
+  { 
+    name: "Weekly", 
+    value: "week", 
+    format: {
+      start: "YYYY-MM-DD",
+      end: "YYYY-MM-DD"
+    }
+  },
+  { name: "Monthly", value: "month", format: "YYYY-MM" },
+  { name: "Yearly", value: "year", format: "YYYY" },
+];
