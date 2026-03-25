@@ -18,14 +18,11 @@ export const SocketProvider = ({ children }) => {
       console.log("Received from socket:", data);
 
       try {
-        const geocoded = await fetchGeocodeData(data);
 
-        // setReports((prev) => [geocoded, ...prev]); // prepend to reports
         setAllReports({
-          latestReports: [geocoded, ...(reports?.latestReports ?? [])],
+          latestReports: [...(reports?.latestReports ?? [])],
           pastReports: [...(reports?.pastReports ?? [])],
         });
-        // dispatch(reportsApi.util.invalidateTags(["Table Report"]));
       } catch (error) {
         console.error("Error geocoding socket data:", error);
       }

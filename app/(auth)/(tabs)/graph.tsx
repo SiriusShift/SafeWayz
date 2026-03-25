@@ -179,7 +179,7 @@ const Graph = () => {
               ? `${moment().startOf("week").format("MMM DD")} - ${moment()
                   .endOf("week")
                   .format("MMM DD")}`
-              : moment().startOf(dateMode?.value).format("MMM DD")}
+              : dateMode?.value === "month" ? `${moment().format("MMMM")}` : dateMode?.value === "year" ? `${moment().format("YYYY")}` : moment().startOf(dateMode?.value).format("MMM DD")}
             )
           </StyledText>
 

@@ -23,6 +23,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useCreateReportMutation } from "@/features/reports/api/reportsApi";
 import { clearCamera } from "@/features/reports/reducers/reportsSlice";
 import { Dropdown } from "react-native-element-dropdown";
+import { fetchGeocodeData } from "@/utils/map/getGeolocationDetails";
 
 const ReportForm = () => {
   const theme = useTheme();
@@ -46,13 +47,20 @@ const ReportForm = () => {
 
   console.log(watch());
   const onSubmit = async (data: Object) => {
-    console.log(data);
+    const locationData = {
+      latitude: location.latitude,
+      longitude: location.longitude
+    }
+    const geocode = await fetchGeocodeData(locationData)
     const transformImage = {
       ...data,
       backImage: reportImages.backCamera.base64,
       frontImage: reportImages.frontCamera.base64,
       lat: location.latitude,
       lng: location.longitude,
+      street: geocode?.street,
+      barangay: geocode?.barangay,
+      city: geocode?.city
     };
     console.log("submit report", transformImage);
     try {
