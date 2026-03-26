@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useRef } from "react";
-import { Image } from "react-native";
+import { Image, Keyboard } from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 
 const SearchBar = ({
